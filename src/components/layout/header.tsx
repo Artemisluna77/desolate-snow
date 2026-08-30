@@ -11,6 +11,8 @@ const NAV_ITEMS = [
   { to: '/catalog', label: '目录' },
   { to: '/weekly', label: '一周更新' },
   { to: '/ranking', label: '排行榜' },
+  { to: '/collections', label: '收藏' },
+  { to: '/history', label: '历史' },
 ]
 
 export function Header() {

@@ -4,7 +4,7 @@
 
 **Blocked by:** 06, 08
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] 详情页收藏/取消收藏按钮,状态持久化
 - [ ] Zustand store + localStorage 持久化:收藏、观看历史、搜索历史统一收口

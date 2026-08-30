@@ -6,11 +6,13 @@ import { AnimeCard } from '@/components/anime/anime-card'
 import { EmptyState } from '@/components/common/empty-state'
 import { RetryErrorState } from '@/components/common/error-state'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAnimeDetail, useAnimeEpisodes } from '@/hooks/use-anime'
+import { useCollections } from '@/stores/collections'
 import { cn } from '@/lib/utils'
-import type { Episode } from '@/types/anime'
+import type { AnimeDetail, Episode } from '@/types/anime'
 
 /** 演示线路:复刻原站多线路选集结构,播放内容由 PlaybackProvider 提供 */
 const PLAY_SOURCES = ['线路一', '线路二', '线路三']
@@ -22,6 +24,22 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 const META_KEYS = ['中文名', '别名', '原作', '制作公司', '动画制作', '官方网站']
+
+function CollectButton({ anime }: { anime: AnimeDetail }) {
+  const collected = useCollections((s) => s.items.some((i) => i.animeId === anime.id))
+  const toggle = useCollections((s) => s.toggle)
+  return (
+    <Button
+      variant={collected ? 'secondary' : 'outline'}
+      size="sm"
+      className={cn('h-7', collected && 'text-primary')}
+      onClick={() => toggle(anime)}
+    >
+      <Star className={cn('size-3.5', collected && 'fill-current')} />
+      {collected ? '已收藏' : '收藏'}
+    </Button>
+  )
+}
 
 function DetailSkeleton() {
   return (
@@ -125,6 +143,7 @@ export function DetailPage() {
           ) : null}
           {anime.rank != null && anime.rank > 0 ? <span>排名 #{anime.rank}</span> : null}
           <Badge variant="secondary">{STATUS_LABEL[anime.status]}</Badge>
+          <CollectButton anime={anime} />
         </div>
       </div>
 
