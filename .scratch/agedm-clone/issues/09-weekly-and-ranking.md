@@ -4,7 +4,7 @@
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] 一周更新页:按星期分组的时间表,条目可进入详情页
 - [ ] 排行榜页:评分排名榜单,注明口径
