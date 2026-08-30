@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAnimeDetail, useAnimeEpisodes } from '@/hooks/use-anime'
+import { usePageTitle } from '@/hooks/use-page-title'
 import { useCollections } from '@/stores/collections'
 import { cn } from '@/lib/utils'
 import type { AnimeDetail, Episode } from '@/types/anime'
@@ -114,6 +115,7 @@ export function DetailPage() {
   const valid = animeId !== null && Number.isInteger(animeId) && animeId > 0
   const detail = useAnimeDetail(valid ? animeId : null)
   const episodes = useAnimeEpisodes(valid ? animeId : null)
+  usePageTitle(detail.data ? (detail.data.titleCn ?? detail.data.title) : '番剧详情')
 
   if (!valid) {
     return <EmptyState title="无效的条目 ID" />

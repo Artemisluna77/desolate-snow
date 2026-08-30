@@ -10,11 +10,13 @@ import { RankingPage } from '@/pages/ranking-page'
 import { CollectionsPage } from '@/pages/collections-page'
 import { HistoryPage } from '@/pages/history-page'
 import { ComponentsDemoPage } from '@/pages/dev/components-demo-page'
+import { RootErrorBoundary } from '@/pages/root-error-boundary'
 
 export const router = createBrowserRouter([
   {
     path: '/',
     Component: RootLayout,
+    ErrorBoundary: RootErrorBoundary,
     children: [
       { index: true, Component: HomePage },
       { path: 'catalog', Component: CatalogPage },

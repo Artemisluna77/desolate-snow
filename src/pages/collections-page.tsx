@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { EmptyState } from '@/components/common/empty-state'
 import { Button } from '@/components/ui/button'
 import { useCollections } from '@/stores/collections'
+import { usePageTitle } from '@/hooks/use-page-title'
 
 function CollectionCard({ entry }: { entry: ReturnType<typeof useCollections.getState>['items'][number] }) {
   const remove = useCollections((s) => s.remove)
@@ -34,6 +35,7 @@ function CollectionCard({ entry }: { entry: ReturnType<typeof useCollections.get
 }
 
 export function CollectionsPage() {
+  usePageTitle('我的收藏')
   const items = useCollections((s) => s.items)
   const clear = useCollections((s) => s.clear)
 

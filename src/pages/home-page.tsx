@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/common/empty-state'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useWeeklyCalendar } from '@/hooks/use-anime'
+import { usePageTitle } from '@/hooks/use-page-title'
 import { cn } from '@/lib/utils'
 import type { WeeklySchedule } from '@/types/anime'
 
@@ -212,6 +213,7 @@ function RecentAiringSection({ schedule }: { schedule: WeeklySchedule[] | undefi
 }
 
 export function HomePage() {
+  usePageTitle('首页')
   const calendar = useWeeklyCalendar()
 
   return (

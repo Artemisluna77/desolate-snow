@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useWeeklyCalendar } from '@/hooks/use-anime'
+import { usePageTitle } from '@/hooks/use-page-title'
 import type { AnimeSummary } from '@/types/anime'
 
 function ScheduleList({ animes }: { animes: AnimeSummary[] }) {
@@ -27,6 +28,7 @@ function ScheduleList({ animes }: { animes: AnimeSummary[] }) {
 
 /** 一周更新页:七天放送时间表全部展开 */
 export function WeeklyPage() {
+  usePageTitle('一周更新')
   const calendar = useWeeklyCalendar()
   const loading = calendar.isPending
 

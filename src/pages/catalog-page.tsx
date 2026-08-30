@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/common/empty-state'
 import { RetryErrorState } from '@/components/common/error-state'
 import { Pagination } from '@/components/ui/pagination'
 import { useCatalogQuery } from '@/hooks/use-anime'
+import { usePageTitle } from '@/hooks/use-page-title'
 import type { CatalogFilter, CatalogSort } from '@/types/anime'
 
 const PAGE_SIZE = 24
@@ -84,6 +85,7 @@ function stateToParams(state: FilterState): URLSearchParams {
 }
 
 export function CatalogPage() {
+  usePageTitle('番剧目录')
   const [searchParams, setSearchParams] = useSearchParams()
   const state = useMemo(() => parseState(searchParams), [searchParams])
 

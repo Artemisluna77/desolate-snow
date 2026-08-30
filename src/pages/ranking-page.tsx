@@ -5,11 +5,13 @@ import { AnimeCardSkeleton } from '@/components/anime/anime-card-skeleton'
 import { EmptyState } from '@/components/common/empty-state'
 import { RetryErrorState } from '@/components/common/error-state'
 import { useCatalogQuery } from '@/hooks/use-anime'
+import { usePageTitle } from '@/hooks/use-page-title'
 
 const RANK_SIZE = 50
 
 /** 排行榜:热门番剧池(目录浏览默认序)按评分排序,页面明示口径 */
 export function RankingPage() {
+  usePageTitle('排行榜')
   const query = useCatalogQuery({ sort: 'hot', page: 1, pageSize: 100 })
 
   const items = useMemo(() => {

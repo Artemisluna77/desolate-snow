@@ -7,6 +7,7 @@ import { RetryErrorState } from '@/components/common/error-state'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAnimeDetail, useAnimeEpisodes } from '@/hooks/use-anime'
+import { usePageTitle } from '@/hooks/use-page-title'
 import { demoPlaybackProvider } from '@/playback/playback-provider'
 import { cn } from '@/lib/utils'
 import { useWatchHistory } from '@/stores/watch-history'
@@ -24,6 +25,9 @@ export function PlayPage() {
   const detail = useAnimeDetail(valid ? animeId : null)
   const episodes = useAnimeEpisodes(valid ? animeId : null)
   const record = useWatchHistory((s) => s.record)
+  usePageTitle(
+    detail.data ? `播放 ${detail.data.titleCn ?? detail.data.title} 第${episodeNumber}集` : '在线播放',
+  )
 
   const mainEpisodes = useMemo(() => {
     const list = episodes.data ?? []

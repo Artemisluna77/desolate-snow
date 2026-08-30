@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/common/empty-state'
 import { RetryErrorState } from '@/components/common/error-state'
 import { Pagination } from '@/components/ui/pagination'
 import { useAnimeSearch } from '@/hooks/use-anime'
+import { usePageTitle } from '@/hooks/use-page-title'
 import { useSearchHistory } from '@/stores/search-history'
 
 const PAGE_SIZE = 24
@@ -15,6 +16,7 @@ export function SearchPage() {
   const [params, setParams] = useSearchParams()
   const keyword = params.get('kw') ?? ''
   const page = Math.max(1, Number(params.get('page')) || 1)
+  usePageTitle(keyword ? `搜索:${keyword}` : '搜索')
   const query = useAnimeSearch(keyword, page, PAGE_SIZE)
 
   useEffect(() => {

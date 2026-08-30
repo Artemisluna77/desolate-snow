@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { EmptyState } from '@/components/common/empty-state'
 import { Button } from '@/components/ui/button'
 import { useWatchHistory } from '@/stores/watch-history'
+import { usePageTitle } from '@/hooks/use-page-title'
 
 function formatTime(ts: number): string {
   const d = new Date(ts)
@@ -11,6 +12,7 @@ function formatTime(ts: number): string {
 }
 
 export function HistoryPage() {
+  usePageTitle('观看历史')
   const items = useWatchHistory((s) => s.items)
   const remove = useWatchHistory((s) => s.remove)
   const clear = useWatchHistory((s) => s.clear)

@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router'
-import { Search, X } from 'lucide-react'
+import { Moon, Search, Sun, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSearchHistory } from '@/stores/search-history'
+import { useTheme } from '@/stores/theme'
 
 const NAV_ITEMS = [
   { to: '/', label: '首页' },
@@ -21,6 +22,8 @@ export function Header() {
   const navigate = useNavigate()
   const history = useSearchHistory((s) => s.items)
   const clearHistory = useSearchHistory((s) => s.clear)
+  const theme = useTheme((s) => s.theme)
+  const setTheme = useTheme((s) => s.setTheme)
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -67,6 +70,15 @@ export function Header() {
           />
           <Button type="submit" size="icon" variant="ghost" aria-label="搜索">
             <Search />
+          </Button>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            aria-label={theme === 'dark' ? '切换亮色模式' : '切换暗色模式'}
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? <Sun /> : <Moon />}
           </Button>
           {focused && history.length > 0 ? (
             <div className="absolute right-10 top-full z-50 mt-1 w-56 rounded-md border bg-background p-2 shadow-md">
