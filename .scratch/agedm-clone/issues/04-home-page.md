@@ -4,7 +4,7 @@
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] 最近更新区(顶部列表 + 底部带日期版本)
 - [ ] 今日推荐卡片行,复用 AnimeCard
