@@ -4,7 +4,7 @@
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] 标题 + 统计区
 - [ ] 基本信息卡字段完整,布局对照原站

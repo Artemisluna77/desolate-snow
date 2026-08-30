@@ -143,7 +143,7 @@ export const bangumiSource: AnimeDataSource = {
           sort: number
           duration?: string | null
         }>
-      }>(`/v0/subjects/${id}/episodes`)
+      }>(`/v0/episodes?subject_id=${id}&limit=500`)
       return res.data.map((e) => ({
         id: e.id,
         number: e.sort,
