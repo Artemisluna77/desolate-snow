@@ -4,7 +4,7 @@
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] 8 维筛选栏 + 排序,多选组合查询真实数据
 - [ ] 筛选与页码同步到 URL,前进/后退/刷新状态保持

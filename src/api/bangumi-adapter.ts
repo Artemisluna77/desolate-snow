@@ -77,11 +77,7 @@ export function inferStatus(airDate: string | null): 'airing' | 'finished' | 'up
 
 function toSearchBody(filter: CatalogFilter) {
   const body: Record<string, unknown> = {
-    filter: {
-      type: [2],
-      ...(filter.year ? { years: [String(filter.year)] } : {}),
-      ...(filter.tag ? { tags: [filter.tag] } : {}),
-    },
+    filter: { type: [2] },
     sort: filter.sort,
     limit: filter.pageSize,
     offset: (filter.page - 1) * filter.pageSize,
@@ -90,8 +86,25 @@ function toSearchBody(filter: CatalogFilter) {
   return body
 }
 
+/**
+ * 目录浏览(无关键词):GET /v0/subjects,年份过滤真实有效,默认顺序即人气序;
+ * 关键词搜索:POST /v0/search/subjects。实测 POST filter 在无/有关键词时对
+ * years/tags 均不可靠,故类型等维度不在数据层过滤,由页面提示能力边界。
+ */
 export const bangumiSource: AnimeDataSource = {
   async search(filter: CatalogFilter): Promise<PagedResult<AnimeSummary>> {
+    if (!filter.keyword) {
+      const params = new URLSearchParams({
+        type: '2',
+        limit: String(filter.pageSize),
+        offset: String((filter.page - 1) * filter.pageSize),
+      })
+      if (filter.year) params.set('year', String(filter.year))
+      const res = await bgmFetch<{ total: number; data: BangumiSubject[] }>(
+        `/v0/subjects?${params.toString()}`,
+      )
+      return { total: res.total, items: res.data.map(toAnimeSummary) }
+    }
     const res = await bgmFetch<{ total: number; data: BangumiSubject[] }>('/v0/search/subjects', {
       method: 'POST',
       body: JSON.stringify(toSearchBody(filter)),
