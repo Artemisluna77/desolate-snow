@@ -102,7 +102,7 @@ const MOCK_ANIMES: MockAnime[] = [
   },
 ]
 
-const MOCK_COVERS = new Map(MOCK_ANIMES.map((a) => [a.id, cover(a.titleCn)]))
+const MOCK_COVERS = new Map(MOCK_ANIMES.map((a) => [a.id, cover(a.title)]))
 
 function toSummary(a: MockAnime): AnimeSummary {
   return {
@@ -142,8 +142,7 @@ function sortItems(items: AnimeSummary[], filter: CatalogFilter): AnimeSummary[]
   return sorted
 }
 
-export const mockSource: AnimeDataSource = {
-  async search(filter): Promise<PagedResult<AnimeSummary>> {
+export const mockSource: AnimeDataSource = {  async search(filter): Promise<PagedResult<AnimeSummary>> {
     const items = sortItems(
       MOCK_ANIMES.filter((a) => matches(a, filter)).map(toSummary),
       filter,
@@ -198,3 +197,6 @@ export const mockSource: AnimeDataSource = {
     }))
   },
 }
+
+/** 供组件演示页直接使用的静态条目 */
+export const mockAnimes: AnimeSummary[] = MOCK_ANIMES.map(toSummary)
