@@ -4,7 +4,7 @@
 
 **Blocked by:** 06
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] `PlaybackProvider` 接口抽象 + 默认演示视频实现(公共演示片源)
 - [ ] 线路切换与选集侧栏,状态与 URL 同步
