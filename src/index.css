@@ -1918,3 +1918,33 @@
 .age-detail-invalid {
   min-height: 100px;
 }
+
+.age-art-player,
+.age-art-player-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000000;
+}
+
+.age-art-player .art-video-player {
+  width: 100%;
+  height: 100%;
+}
+
+.age-art-player-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000000;
+}
+
+.age-player-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  color: #adb5bd;
+  background: #000000;
+}

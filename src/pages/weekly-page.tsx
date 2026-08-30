@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 
 import { AGE_UPDATE_GROUPS, type AgeUpdateItem } from '@/data/age-page-data'
 import { ageCover } from '@/data/home-data'
+import { useAgedmUpdate } from '@/hooks/use-agedm'
 import { usePageTitle } from '@/hooks/use-page-title'
 
 function UpdateCard({ item }: { item: AgeUpdateItem }) {
@@ -10,7 +11,7 @@ function UpdateCard({ item }: { item: AgeUpdateItem }) {
       <div className="age-update-card">
         <div className="age-update-image">
           <Link to={`/detail/${item.id}`} title={item.title}>
-            <img src={ageCover(item.id)} alt={item.title} />
+            <img src={item.coverUrl ?? ageCover(item.id)} alt={item.title} />
             <span>{item.episode}</span>
           </Link>
         </div>
@@ -45,12 +46,14 @@ function UpdateGroup({ label, items }: { label: string; items: AgeUpdateItem[] }
 /** 一周更新：按目标站点的日期分组，以六列海报墙呈现。 */
 export function WeeklyPage() {
   usePageTitle('一周更新')
+  const updateQuery = useAgedmUpdate(1, 60)
+  const groups = updateQuery.data?.data.groups ?? AGE_UPDATE_GROUPS
 
   return (
     <div className="age-page-main">
       <div className="age-container">
         <section className="age-page-panel age-update-panel">
-          {AGE_UPDATE_GROUPS.map((group) => (
+          {groups.map((group) => (
             <UpdateGroup key={group.label} label={group.label} items={group.items} />
           ))}
         </section>

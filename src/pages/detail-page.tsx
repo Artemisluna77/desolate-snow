@@ -2,8 +2,16 @@ import { useMemo, useState } from 'react'
 import { Flame, Heart, MessageSquare, Play, ThumbsUp } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 
-import { AGE_DETAIL_RECOMMENDATIONS, getAgeDetail, type AgeDetailData, type AgeUpdateItem } from '@/data/age-page-data'
+import {
+  AGE_DETAIL_RECOMMENDATIONS,
+  getAgeDetail,
+  type AgeDetailData,
+  type AgeDetailEpisode,
+  type AgeDetailSource,
+  type AgeUpdateItem,
+} from '@/data/age-page-data'
 import { ageCover } from '@/data/home-data'
+import { useAgedmDetail } from '@/hooks/use-agedm'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { useCollections } from '@/stores/collections'
 import type { AnimeSummary } from '@/types/anime'
@@ -98,12 +106,26 @@ function RelatedAnime({ anime }: { anime: AgeDetailData }) {
   )
 }
 
+function fallbackSources(anime: AgeDetailData): AgeDetailSource[] {
+  return SOURCE_LABELS.map((label, index) => ({
+    key: 'fallback-' + index,
+    label: label.replace('VIP ', ''),
+    isVip: index === 0,
+    episodes: Array.from({ length: anime.episodeCount }, (_, episodeIndex) => ({
+      number: episodeIndex + 1,
+      title: '第' + String(episodeIndex + 1).padStart(2, '0') + '集',
+    })),
+  }))
+}
+
 function EpisodePlaylist({ anime }: { anime: AgeDetailData }) {
   const [source, setSource] = useState(0)
-  const episodes = useMemo(
-    () => Array.from({ length: anime.episodeCount }, (_, index) => index + 1),
-    [anime.episodeCount],
+  const sources = useMemo(
+    () => (anime.sources?.length ? anime.sources : fallbackSources(anime)),
+    [anime],
   )
+  const activeSource = sources[Math.min(source, sources.length - 1)] ?? sources[0]
+  const activeSourceIndex = Math.max(0, sources.indexOf(activeSource))
 
   return (
     <section className="age-detail-playlist">
@@ -115,25 +137,25 @@ function EpisodePlaylist({ anime }: { anime: AgeDetailData }) {
       </div>
       <hr />
       <div className="age-detail-source-tabs" role="tablist" aria-label="播放源">
-        {SOURCE_LABELS.map((label, index) => (
+        {sources.map((item, index) => (
           <button
-            key={label}
+            key={item.key}
             type="button"
             role="tab"
-            aria-selected={source === index}
-            className={source === index ? 'is-active' : undefined}
+            aria-selected={activeSourceIndex === index}
+            className={activeSourceIndex === index ? 'is-active' : undefined}
             onClick={() => setSource(index)}
           >
-            {index === 0 ? <span>VIP</span> : null} {label.replace('VIP ', '')}
+            {item.isVip ? <span>VIP</span> : null} {item.label}
           </button>
         ))}
       </div>
       <div className="age-detail-episode-panel" role="tabpanel">
         <ul>
-          {episodes.map((episode) => (
-            <li key={episode}>
-              <Link to={`/play/${anime.id}/${source + 1}/${episode}`}>
-                第{String(episode).padStart(2, '0')}集
+          {activeSource?.episodes.map((episode: AgeDetailEpisode) => (
+            <li key={episode.number}>
+              <Link to={'/play/' + anime.id + '/' + (activeSourceIndex + 1) + '/' + episode.number}>
+                {episode.title}
               </Link>
             </li>
           ))}
@@ -149,7 +171,7 @@ function RecommendationCard({ item }: { item: AgeUpdateItem }) {
       <div className="age-detail-recommend-card">
         <div className="age-detail-recommend-image">
           <Link to={`/detail/${item.id}`} title={item.title}>
-            <img src={ageCover(item.id)} alt={item.title} loading="lazy" />
+            <img src={item.coverUrl ?? ageCover(item.id)} alt={item.title} loading="lazy" />
             <span>{item.episode}</span>
           </Link>
         </div>
@@ -163,7 +185,7 @@ function RecommendationCard({ item }: { item: AgeUpdateItem }) {
   )
 }
 
-function Recommendations() {
+function Recommendations({ items }: { items: AgeUpdateItem[] }) {
   return (
     <section className="age-detail-recommendations">
       <div className="age-detail-section-title">
@@ -174,7 +196,7 @@ function Recommendations() {
       <hr />
       <div className="age-detail-recommend-body">
         <div className="age-detail-recommend-grid">
-          {AGE_DETAIL_RECOMMENDATIONS.map((item) => (
+          {items.map((item) => (
             <RecommendationCard key={item.id} item={item} />
           ))}
         </div>
@@ -187,7 +209,9 @@ export function DetailPage() {
   const { id } = useParams()
   const animeId = id ? Number(id) : Number.NaN
   const valid = Number.isInteger(animeId) && animeId > 0
-  const anime = getAgeDetail(valid ? animeId : 0)
+  const detailQuery = useAgedmDetail(valid ? animeId : null)
+  const fallbackAnime = getAgeDetail(valid ? animeId : 0)
+  const anime = detailQuery.data?.data ?? fallbackAnime
   usePageTitle(valid ? anime.title : '番剧详情')
 
   if (!valid) {
@@ -211,9 +235,15 @@ export function DetailPage() {
                 <CollectButton anime={anime} />
               </div>
               <div className="age-detail-stats">
-                <div><Flame /> {anime.stats.views}</div>
-                <div><MessageSquare /> {anime.stats.comments}</div>
-                <div><Heart /> {anime.stats.likes}</div>
+                <div>
+                  <Flame /> {anime.stats.views}
+                </div>
+                <div>
+                  <MessageSquare /> {anime.stats.comments}
+                </div>
+                <div>
+                  <Heart /> {anime.stats.likes}
+                </div>
               </div>
               <DetailInfo anime={anime} />
               <RelatedAnime anime={anime} />
@@ -224,7 +254,11 @@ export function DetailPage() {
               <hr />
               <p className="age-detail-description">{anime.summary}</p>
               <EpisodePlaylist anime={anime} />
-              <Recommendations />
+              <Recommendations
+                items={
+                  anime.recommended.length > 0 ? anime.recommended : AGE_DETAIL_RECOMMENDATIONS
+                }
+              />
             </main>
           </div>
         </section>

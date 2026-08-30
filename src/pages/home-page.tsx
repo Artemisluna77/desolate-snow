@@ -8,9 +8,12 @@ import {
   HOME_RECENT_UPDATES,
   HOME_RECOMMEND,
   HOME_SCHEDULE,
+  type HomeRecentUpdate,
+  type HomeScheduleDay,
   type HomeScheduleItem,
   type HomeVideoCard as HomeVideoCardData,
 } from '@/data/home-data'
+import { useAgedmHome } from '@/hooks/use-agedm'
 import { usePageTitle } from '@/hooks/use-page-title'
 
 function todayIndex(): number {
@@ -127,16 +130,16 @@ function ScheduleRow({ item }: { item: HomeScheduleItem }) {
   )
 }
 
-function WeeklySection() {
+function WeeklySection({ schedule }: { schedule: HomeScheduleDay[] }) {
   const [selected, setSelected] = useState(todayIndex)
-  const current = HOME_SCHEDULE[selected]
+  const current = schedule[selected] ?? schedule[0]
 
   return (
     <section className="age-text-section age-weekly-section">
       <SectionHeader title="本周放送列表" />
       <div className="age-weekly-body">
         <div className="age-week-tabs" role="tablist" aria-label="选择星期">
-          {HOME_SCHEDULE.map((day, index) => (
+          {schedule.map((day, index) => (
             <button
               key={day.label}
               type="button"
@@ -162,12 +165,12 @@ function WeeklySection() {
   )
 }
 
-function RecentUpdatesSection() {
+function RecentUpdatesSection({ items }: { items: HomeRecentUpdate[] }) {
   return (
     <section className="age-text-section age-recent-list-section">
       <SectionHeader title="最近更新" />
       <ul className="age-text-list">
-        {HOME_RECENT_UPDATES.map((item) => (
+        {items.map((item) => (
           <li key={item.id} className="age-schedule-item">
             <Link to={`/detail/${item.id}`} className="age-schedule-row">
               <span className="age-schedule-name">{item.title}</span>
@@ -197,6 +200,13 @@ function FriendLinksSection() {
 
 export function HomePage() {
   usePageTitle('首页')
+  const homeQuery = useAgedmHome()
+  const home = homeQuery.data?.data ?? {
+    latest: HOME_RECENT,
+    recommend: HOME_RECOMMEND,
+    schedule: HOME_SCHEDULE,
+    recentUpdates: HOME_RECENT_UPDATES,
+  }
 
   return (
     <div className="age-main-wrapper">
@@ -204,13 +214,13 @@ export function HomePage() {
         <section className="age-home-panel">
           <div className="age-home-grid">
             <div className="age-home-primary">
-              <VideoSection title="最近更新" moreTo="/update" items={HOME_RECENT} />
+              <VideoSection title="最近更新" moreTo="/update" items={home.latest} />
               <AppBanner />
-              <VideoSection title="今日推荐" moreTo="/recommend" items={HOME_RECOMMEND} />
+              <VideoSection title="今日推荐" moreTo="/recommend" items={home.recommend} />
             </div>
             <aside className="age-home-sidebar">
-              <WeeklySection />
-              <RecentUpdatesSection />
+              <WeeklySection schedule={home.schedule} />
+              <RecentUpdatesSection items={home.recentUpdates} />
             </aside>
             <FriendLinksSection />
           </div>

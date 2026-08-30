@@ -2,6 +2,8 @@ import { Link, useLocation } from 'react-router'
 
 import { AGE_CATALOG_ITEMS, AGE_CATALOG_TOTAL, type AgeCatalogItem } from '@/data/age-page-data'
 import { ageCover } from '@/data/home-data'
+import { useAgedmCatalog } from '@/hooks/use-agedm'
+import type { AgedmCatalogParams } from '@/api/agedm-client'
 import { usePageTitle } from '@/hooks/use-page-title'
 
 type CatalogKey =
@@ -48,12 +50,38 @@ const PLATFORMS: FilterOption[] = [
   { value: 'OVA', label: 'OVA' },
 ]
 
-const LETTERS = 'ABCDEFHIJKLMNOPQRSTUVWXYZ'.split('').map((letter) => ({ value: letter, label: letter }))
+const LETTERS = 'ABCDEFHIJKLMNOPQRSTUVWXYZ'
+  .split('')
+  .map((letter) => ({ value: letter, label: letter }))
 
 const YEARS = [
-  '2026', '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016',
-  '2015', '2014', '2013', '2012', '2011', '2010', '2009', '2008', '2007', '2006', '2005',
-  '2004', '2003', '2002', '2001', '2000以前',
+  '2026',
+  '2025',
+  '2024',
+  '2023',
+  '2022',
+  '2021',
+  '2020',
+  '2019',
+  '2018',
+  '2017',
+  '2016',
+  '2015',
+  '2014',
+  '2013',
+  '2012',
+  '2011',
+  '2010',
+  '2009',
+  '2008',
+  '2007',
+  '2006',
+  '2005',
+  '2004',
+  '2003',
+  '2002',
+  '2001',
+  '2000以前',
 ].map((year) => ({ value: year, label: year }))
 
 const QUARTERS: FilterOption[] = [
@@ -70,10 +98,51 @@ const STATUSES: FilterOption[] = [
 ]
 
 const GENRES = [
-  '搞笑', '运动', '励志', '热血', '战斗', '竞技', '校园', '青春', '爱情', '恋爱', '冒险', '后宫',
-  '百合', '治愈', '萝莉', '魔法', '悬疑', '推理', '奇幻', '科幻', '游戏', '神魔', '恐怖', '血腥',
-  '机战', '战争', '犯罪', '历史', '社会', '职场', '剧情', '伪娘', '耽美', '童年', '教育', '亲子',
-  '真人', '歌舞', '肉番', '美少女', '轻小说', '吸血鬼', '女性向', '泡面番', '欢乐向',
+  '搞笑',
+  '运动',
+  '励志',
+  '热血',
+  '战斗',
+  '竞技',
+  '校园',
+  '青春',
+  '爱情',
+  '恋爱',
+  '冒险',
+  '后宫',
+  '百合',
+  '治愈',
+  '萝莉',
+  '魔法',
+  '悬疑',
+  '推理',
+  '奇幻',
+  '科幻',
+  '游戏',
+  '神魔',
+  '恐怖',
+  '血腥',
+  '机战',
+  '战争',
+  '犯罪',
+  '历史',
+  '社会',
+  '职场',
+  '剧情',
+  '伪娘',
+  '耽美',
+  '童年',
+  '教育',
+  '亲子',
+  '真人',
+  '歌舞',
+  '肉番',
+  '美少女',
+  '轻小说',
+  '吸血鬼',
+  '女性向',
+  '泡面番',
+  '欢乐向',
 ].map((genre) => ({ value: genre, label: genre }))
 
 const RESOURCES: FilterOption[] = [
@@ -122,7 +191,11 @@ function serializeCatalogState(state: CatalogState, keepFilterTail = false): str
 }
 
 function catalogLink(state: CatalogState, key: CatalogKey, value: string): string {
-  const nextState = { ...state, [key]: key === 'page' ? Number(value) : value, page: key === 'page' ? Number(value) : 1 }
+  const nextState = {
+    ...state,
+    [key]: key === 'page' ? Number(value) : value,
+    page: key === 'page' ? Number(value) : 1,
+  }
   return serializeCatalogState(nextState, key === 'region' || key === 'quarter' || key === 'status')
 }
 
@@ -165,22 +238,6 @@ function FilterRow({
   )
 }
 
-function matchesCatalogItem(item: AgeCatalogItem, state: CatalogState): boolean {
-  if (state.platform !== 'all' && item.platform !== state.platform) return false
-  if (state.year !== 'all') {
-    if (state.year === '2000以前') {
-      if (Number(item.airDate.slice(0, 4)) > 2000) return false
-    } else if (!item.airDate.startsWith(state.year)) {
-      return false
-    }
-  }
-  if (state.region !== 'all' && item.region !== state.region) return false
-  if (state.status !== 'all' && item.status !== state.status) return false
-  if (state.letter !== 'all' && !item.title.toUpperCase().startsWith(state.letter)) return false
-  if (state.genre !== 'all' && !item.genres.split(/\s+/).includes(state.genre)) return false
-  return true
-}
-
 function CatalogItem({ item }: { item: AgeCatalogItem }) {
   const info = [
     ['动画种类', item.platform],
@@ -196,7 +253,7 @@ function CatalogItem({ item }: { item: AgeCatalogItem }) {
     <article className="age-catalog-item">
       <div className="age-catalog-cover">
         <Link to={`/detail/${item.id}`} title={item.title}>
-          <img src={ageCover(item.id)} alt={item.title} />
+          <img src={item.coverUrl ?? ageCover(item.id)} alt={item.title} />
           <span>{item.episode}</span>
         </Link>
       </div>
@@ -229,14 +286,26 @@ function CatalogItem({ item }: { item: AgeCatalogItem }) {
   )
 }
 
-function CatalogPagination({ state, totalPages }: { state: CatalogState; totalPages: number }) {
+function CatalogPagination({
+  state,
+  total,
+  totalPages,
+}: {
+  state: CatalogState
+  total: number
+  totalPages: number
+}) {
   const pages = Array.from({ length: Math.min(9, totalPages) }, (_, index) => index + 1)
   return (
     <nav className="age-catalog-pagination" aria-label="navigation">
       <ul>
         <li className="is-disabled">
           <span>
-            共 <strong>{AGE_CATALOG_TOTAL}</strong> 条记录，当前 <strong>{state.page}/{totalPages}</strong> 页
+            共 <strong>{total}</strong> 条记录，当前{' '}
+            <strong>
+              {state.page}/{totalPages}
+            </strong>{' '}
+            页
           </span>
         </li>
         <li>
@@ -248,12 +317,20 @@ function CatalogPagination({ state, totalPages }: { state: CatalogState; totalPa
           </li>
         ))}
         <li>
-          <Link to={catalogLink({ ...state, page: Math.min(totalPages, state.page + 1) }, 'page', String(Math.min(totalPages, state.page + 1)))}>
+          <Link
+            to={catalogLink(
+              { ...state, page: Math.min(totalPages, state.page + 1) },
+              'page',
+              String(Math.min(totalPages, state.page + 1)),
+            )}
+          >
             下一页
           </Link>
         </li>
         <li>
-          <Link to={catalogLink({ ...state, page: totalPages }, 'page', String(totalPages))}>尾页</Link>
+          <Link to={catalogLink({ ...state, page: totalPages }, 'page', String(totalPages))}>
+            尾页
+          </Link>
         </li>
       </ul>
     </nav>
@@ -264,9 +341,27 @@ export function CatalogPage() {
   usePageTitle('全部动漫')
   const { pathname } = useLocation()
   const state = parseCatalogState(pathname)
-  const filteredItems = AGE_CATALOG_ITEMS.filter((item) => matchesCatalogItem(item, state))
-  const items = filteredItems.length > 0 ? filteredItems : AGE_CATALOG_ITEMS
-  const totalPages = Math.ceil(AGE_CATALOG_TOTAL / 24)
+  const catalogParams: AgedmCatalogParams = {
+    region: state.region,
+    genre: state.platform,
+    letter: state.letter,
+    year: state.year === '2000以前' ? '2000' : state.year,
+    season: state.quarter,
+    status: state.status,
+    label: state.genre,
+    resource: state.resource === 'AGE-RIP' ? 'AGERIP' : state.resource,
+    order: state.sort === '点击量' ? 'hits' : state.sort,
+    page: state.page,
+    size: 24,
+  }
+  const catalogQuery = useAgedmCatalog(catalogParams)
+  const catalog = catalogQuery.data?.data ?? {
+    total: AGE_CATALOG_TOTAL,
+    page: state.page,
+    pageSize: 24,
+    items: AGE_CATALOG_ITEMS,
+  }
+  const totalPages = Math.max(1, Math.ceil(catalog.total / catalog.pageSize))
 
   return (
     <div className="age-page-main">
@@ -285,11 +380,11 @@ export function CatalogPage() {
           </div>
 
           <div className="age-catalog-results">
-            {items.map((item) => (
+            {catalog.items.map((item) => (
               <CatalogItem key={item.id} item={item} />
             ))}
           </div>
-          <CatalogPagination state={state} totalPages={totalPages} />
+          <CatalogPagination state={state} total={catalog.total} totalPages={totalPages} />
         </section>
       </div>
     </div>

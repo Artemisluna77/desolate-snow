@@ -4,6 +4,7 @@ export interface AgeCatalogItem {
   id: number
   title: string
   episode: string
+  coverUrl?: string
   region: string
   platform: string
   original: string
@@ -20,6 +21,7 @@ export interface AgeUpdateItem {
   id: number
   title: string
   episode: string
+  coverUrl?: string
 }
 
 export interface AgeUpdateGroup {
@@ -36,6 +38,18 @@ export interface AgeRankItem {
 export interface AgeRankBoard {
   title: string
   items: AgeRankItem[]
+}
+
+export interface AgeDetailEpisode {
+  number: number
+  title: string
+}
+
+export interface AgeDetailSource {
+  key: string
+  label: string
+  isVip: boolean
+  episodes: AgeDetailEpisode[]
 }
 
 export interface AgeDetailData {
@@ -58,6 +72,7 @@ export interface AgeDetailData {
   related: Array<{ id: number; title: string }>
   recommended: AgeUpdateItem[]
   episodeCount: number
+  sources?: AgeDetailSource[]
 }
 
 const catalog = (
@@ -172,7 +187,8 @@ export const AGE_CATALOG_ITEMS: AgeCatalogItem[] = [
     {
       original:
         '才女のお世話 高嶺の花だらけな名門校で、学院一のお嬢様（生活能力皆無）を陰ながらお世話することになりました',
-      other: "Rich Girl Caretaker: I'm Secretly the Caregiver of the Most Popular Girl in This Rich Kid School",
+      other:
+        "Rich Girl Caretaker: I'm Secretly the Caregiver of the Most Popular Girl in This Rich Kid School",
       airDate: '2026-07-05',
       author: '坂石游作',
       genres: '搞笑 后宫 恋爱',
@@ -183,7 +199,8 @@ export const AGE_CATALOG_ITEMS: AgeCatalogItem[] = [
   ),
   catalog(20260204, '声称不爱我的下任公爵为何会溺爱我', '第09集', {
     original: '「きみを愛する気はない」と言った次期公爵様がなぜか溺愛してきます',
-    other: '说了不打算爱我的公爵继承人，不知为何对我宠爱有加 / 明明说了“我不会爱你”的下任公爵大人为何突然开始宠溺我',
+    other:
+      '说了不打算爱我的公爵继承人，不知为何对我宠爱有加 / 明明说了“我不会爱你”的下任公爵大人为何突然开始宠溺我',
     airDate: '2026-07-04',
     author: '三泽Kei',
     genres: '恋爱',
@@ -269,7 +286,8 @@ export const AGE_CATALOG_ITEMS: AgeCatalogItem[] = [
   }),
   catalog(20260192, '岩元前辈的推荐', '第09集', {
     original: '岩元先輩ノ推薦',
-    other: 'Upperclassman Iwamoto\'s Recommendation / Iwamoto Senpai no Suisen / IWAMOTO-SENPAI NO SUISEN',
+    other:
+      "Upperclassman Iwamoto's Recommendation / Iwamoto Senpai no Suisen / IWAMOTO-SENPAI NO SUISEN",
     author: '椎桥宽',
     genres: '奇幻',
     company: 'Studio DEEN',
@@ -344,7 +362,11 @@ export const AGE_UPDATE_GROUPS: AgeUpdateGroup[] = [
       update(20250235, '数码宝贝 BEATBREAK', '第45集'),
       update(20260181, '相反的你和我 第二季', '第09集'),
       update(20260064, '名侦探光之美少女！', '第31集'),
-      update(20260225, '才女的侍从 在满是高岭之花的贵族学校暗中照顾（毫无生活自理能力的）学院第一大小姐', '第09集'),
+      update(
+        20260225,
+        '才女的侍从 在满是高岭之花的贵族学校暗中照顾（毫无生活自理能力的）学院第一大小姐',
+        '第09集',
+      ),
       update(20260204, '声称不爱我的下任公爵为何会溺爱我', '第09集'),
       update(20260196, '花织同学转生后还是想干架', '第08集'),
       update(20260112, '摩绪', '第22集'),
@@ -506,7 +528,11 @@ export const AGE_RANK_BOARDS: AgeRankBoard[] = [
       rank(20240195, '死神 千年血战篇-相克谭-', '1.56w'),
       rank(20260182, '超超超超超喜欢你的100个女朋友 第三季', '1.54w'),
       rank(20020006, '火影忍者', '1.51w'),
-      rank(20260225, '才女的侍从 在满是高岭之花的贵族学校暗中照顾（毫无生活自理能力的）学院第一大小姐', '1.51w'),
+      rank(
+        20260225,
+        '才女的侍从 在满是高岭之花的贵族学校暗中照顾（毫无生活自理能力的）学院第一大小姐',
+        '1.51w',
+      ),
       rank(20220408, '斗破苍穹年番', '1.50w'),
       rank(20260169, 'BanG Dream! YUME∞MITA', '1.49w'),
       rank(20260223, '猫与龙', '1.48w'),
@@ -549,7 +575,11 @@ export const AGE_RANK_BOARDS: AgeRankBoard[] = [
       rank(20260208, '骸骨骑士大人异世界冒险中 第二季', '8.44w'),
       rank(20060008, 'DEATH NOTE', '8.39w'),
       rank(20260193, '令和的斑小姐', '8.11w'),
-      rank(20260225, '才女的侍从 在满是高岭之花的贵族学校暗中照顾（毫无生活自理能力的）学院第一大小姐', '7.90w'),
+      rank(
+        20260225,
+        '才女的侍从 在满是高岭之花的贵族学校暗中照顾（毫无生活自理能力的）学院第一大小姐',
+        '7.90w',
+      ),
       rank(20220408, '斗破苍穹年番', '7.82w'),
       rank(20260165, '躲在超市后门抽烟的两人', '7.61w'),
       rank(20260181, '相反的你和我 第二季', '7.51w'),
@@ -674,7 +704,9 @@ export function getAgeDetail(id: number): AgeDetailData {
     id: item.id,
     title: item.title,
     coverUrl: ageCover(item.id),
-    stats: isNanoha ? { views: '6.90w', comments: '131', likes: '401' } : { views: '0', comments: '0', likes: '0' },
+    stats: isNanoha
+      ? { views: '6.90w', comments: '131', likes: '401' }
+      : { views: '0', comments: '0', likes: '0' },
     region: item.region,
     platform: item.platform,
     original: item.original,
