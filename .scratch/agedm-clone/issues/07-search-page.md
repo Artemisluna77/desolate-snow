@@ -4,7 +4,7 @@
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** claimed
 
 - [ ] 搜索结果页:关键词查询真实数据,列表复用目录页条目样式
 - [ ] 关键词编码进 URL,刷新后结果保持
