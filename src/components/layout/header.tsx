@@ -1,137 +1,257 @@
-import { useState, type FormEvent } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router'
-import { Moon, Search, Sun, X } from 'lucide-react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Clock3, Download, Search, X } from 'lucide-react'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { useSearchHistory } from '@/stores/search-history'
-import { useTheme } from '@/stores/theme'
+import { useWatchHistory } from '@/stores/watch-history'
 
 const NAV_ITEMS = [
   { to: '/', label: '首页' },
-  { to: '/catalog', label: '目录' },
-  { to: '/weekly', label: '一周更新' },
-  { to: '/ranking', label: '排行榜' },
-  { to: '/collections', label: '收藏' },
-  { to: '/history', label: '历史' },
+  { to: '/catalog/all-all-all-all-all-time-1', label: '目录' },
+  { to: '/update', label: '一周更新' },
+  { to: '/rank', label: '排行榜' },
 ]
 
-export function Header() {
-  const [keyword, setKeyword] = useState('')
-  const [focused, setFocused] = useState(false)
-  const navigate = useNavigate()
-  const history = useSearchHistory((s) => s.items)
-  const clearHistory = useSearchHistory((s) => s.clear)
-  const theme = useTheme((s) => s.theme)
-  const setTheme = useTheme((s) => s.setTheme)
+function AuthModal({ onClose }: { onClose: () => void }) {
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [submitted, setSubmitted] = useState(false)
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault()
-    const kw = keyword.trim()
-    if (kw) navigate(`/search?kw=${encodeURIComponent(kw)}`)
-  }
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+    }
 
-  function searchTo(kw: string) {
-    setKeyword(kw)
-    navigate(`/search?kw=${encodeURIComponent(kw)}`)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubmitted(true)
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
-      <div className="container flex flex-wrap items-center gap-x-6 gap-y-2 py-3">
-        <Link to="/" className="text-lg font-bold tracking-wide">
-          AGE动漫
-        </Link>
-        <nav className="hidden items-center gap-5 md:flex" aria-label="主导航">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                `text-sm transition-colors hover:text-foreground ${
-                  isActive ? 'font-medium text-foreground' : 'text-muted-foreground'
-                }`
-              }
+    <div
+      className="age-modal-backdrop"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <div className="age-auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+        <div className="age-auth-header">
+          <h1 id="auth-title" className="age-auth-title">
+            <button
+              type="button"
+              className={mode === 'login' ? 'is-active' : ''}
+              onClick={() => {
+                setMode('login')
+                setSubmitted(false)
+              }}
             >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <form onSubmit={handleSubmit} className="relative ml-auto flex items-center gap-1.5" role="search">
-          <Input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setTimeout(() => setFocused(false), 150)}
-            placeholder="搜索番剧…"
-            aria-label="搜索番剧"
-            className="h-9 w-40 md:w-56"
-          />
-          <Button type="submit" size="icon" variant="ghost" aria-label="搜索">
-            <Search />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            aria-label={theme === 'dark' ? '切换亮色模式' : '切换暗色模式'}
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          >
-            {theme === 'dark' ? <Sun /> : <Moon />}
-          </Button>
-          {focused && history.length > 0 ? (
-            <div className="absolute right-10 top-full z-50 mt-1 w-56 rounded-md border bg-background p-2 shadow-md">
-              <div className="mb-1 flex items-center justify-between px-1">
-                <span className="text-xs text-muted-foreground">搜索历史</span>
-                <button
-                  type="button"
-                  onClick={clearHistory}
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  清空
-                </button>
-              </div>
-              <ul className="max-h-60 space-y-0.5 overflow-y-auto">
-                {history.map((kw) => (
-                  <li key={kw}>
-                    <button
-                      type="button"
-                      onMouseDown={() => searchTo(kw)}
-                      className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
-                    >
-                      <span className="truncate">{kw}</span>
-                      <X
-                        className="size-3.5 shrink-0 text-muted-foreground"
-                        onMouseDown={(e) => {
-                          e.stopPropagation()
-                          useSearchHistory.getState().remove(kw)
-                        }}
-                      />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+              登录
+            </button>
+            <span className="age-auth-divider">|</span>
+            <button
+              type="button"
+              className={mode === 'register' ? 'is-active' : ''}
+              onClick={() => {
+                setMode('register')
+                setSubmitted(false)
+              }}
+            >
+              注册
+            </button>
+          </h1>
+          <button type="button" className="age-auth-close" aria-label="关闭" onClick={onClose}>
+            <X />
+          </button>
+        </div>
+        <form className="age-auth-form" onSubmit={handleSubmit}>
+          <label>
+            <span>用户名</span>
+            <input required maxLength={16} placeholder="16个字符内的字母、数字或符号" />
+          </label>
+          <label>
+            <span>密码</span>
+            <input required type="password" placeholder="8-32位字母、数字或符号" />
+          </label>
+          {mode === 'register' ? (
+            <label>
+              <span>重复密码</span>
+              <input required type="password" placeholder="请再次输入密码" />
+            </label>
           ) : null}
+          <label>
+            <span>验证码</span>
+            <div className="age-captcha-row">
+              <input required placeholder="点击获取" />
+              <button type="button">获取</button>
+            </div>
+          </label>
+          {submitted ? <p className="age-auth-message">演示界面：账号功能暂未连接。</p> : null}
+          <button type="submit" className="age-auth-submit">
+            提交
+          </button>
         </form>
       </div>
-      <nav className="container flex items-center gap-5 pb-2 md:hidden" aria-label="移动端导航">
-        {NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/'}
-            className={({ isActive }) =>
-              `text-sm transition-colors ${
-                isActive ? 'font-medium text-foreground' : 'text-muted-foreground'
-              }`
-            }
-          >
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
-    </header>
+    </div>
+  )
+}
+
+function NoticeBar() {
+  return (
+    <div className="age-notice" id="notice_box">
+      <div className="age-container age-notice-container">
+        <div className="age-notice-alert">
+          <span>AGE动漫 备用地址：</span> <a href="http://www.age.tv">www.age.tv</a>{' '}
+          <span>欢迎大家分享给身边朋友！为确保正常观看，请使用</span>{' '}
+          <a href="https://www.google.cn/intl/zh-CN/chrome/">谷歌浏览器</a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function Header() {
+  const [keyword, setKeyword] = useState('')
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [logoFailed, setLogoFailed] = useState(false)
+  const historyWrapperRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const historyItems = useWatchHistory((state) => state.items)
+  const clearWatchHistory = useWatchHistory((state) => state.clear)
+
+  useEffect(() => {
+    if (!historyOpen) return
+
+    function closeOnOutsideClick(event: MouseEvent) {
+      if (historyWrapperRef.current && !historyWrapperRef.current.contains(event.target as Node)) {
+        setHistoryOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', closeOnOutsideClick)
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick)
+  }, [historyOpen])
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const query = keyword.trim()
+    if (!query) return
+    useSearchHistory.getState().add(query)
+    setHistoryOpen(false)
+    navigate(`/search?query=${encodeURIComponent(query)}`)
+  }
+
+  return (
+    <>
+      <header className="age-header">
+        <div className="age-container age-header-container">
+          <div className="age-header-row">
+            <Link to="/" className="age-logo" aria-label="AGE动漫首页">
+              {logoFailed ? (
+                <span className="age-logo-text">AGE动漫</span>
+              ) : (
+                <img
+                  src="https://xcdn.aiqingyu1314.com:8443/age/statics/images/logo.png?v=2026082402"
+                  alt="AGE动漫"
+                  onError={() => setLogoFailed(true)}
+                />
+              )}
+            </Link>
+
+            <nav className="age-nav" aria-label="主导航">
+              {NAV_ITEMS.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) => (isActive ? 'is-active' : '')}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+              <a
+                href="https://www.ageapp.app?ref=ageweb"
+                target="_blank"
+                rel="noreferrer"
+                className="age-download-link"
+              >
+                <Download />
+                客户端下载
+              </a>
+            </nav>
+
+            <form className="age-search-form" onSubmit={handleSubmit} role="search">
+              <div className="age-search-group">
+                <input
+                  name="query"
+                  type="search"
+                  value={keyword}
+                  onChange={(event) => setKeyword(event.target.value)}
+                  placeholder="输入番名搜索"
+                  aria-label="输入番名搜索"
+                  maxLength={8}
+                />
+                <button type="submit" aria-label="搜索">
+                  <Search />
+                </button>
+              </div>
+            </form>
+
+            <div className="age-actions" ref={historyWrapperRef}>
+              <div className="age-history-wrapper">
+                <button
+                  type="button"
+                  className="age-history-button"
+                  aria-label="观看记录"
+                  aria-expanded={historyOpen}
+                  onClick={() => setHistoryOpen((open) => !open)}
+                >
+                  <Clock3 />
+                </button>
+                {historyOpen ? (
+                  <div className="age-history-menu">
+                    {historyItems.length > 0 ? (
+                      historyItems.map((item) => (
+                        <Link
+                          key={`${item.animeId}-${item.watchedAt}`}
+                          to={`/play/${item.animeId}/${item.source}/${item.episode}`}
+                          onClick={() => setHistoryOpen(false)}
+                        >
+                          <span>{item.animeTitle}</span>
+                          <em>第{item.episode}集</em>
+                        </Link>
+                      ))
+                    ) : (
+                      <p className="age-history-empty">暂无观看记录</p>
+                    )}
+                    <button
+                      type="button"
+                      className="age-history-clear"
+                      disabled={historyItems.length === 0}
+                      onClick={() => {
+                        clearWatchHistory()
+                        setHistoryOpen(false)
+                      }}
+                    >
+                      清除全部观看记录
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+              <button type="button" className="age-login-button" onClick={() => setAuthOpen(true)}>
+                登录 <span>|</span> 注册
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+      {pathname === '/' ? <NoticeBar /> : null}
+      {authOpen ? <AuthModal onClose={() => setAuthOpen(false)} /> : null}
+    </>
   )
 }

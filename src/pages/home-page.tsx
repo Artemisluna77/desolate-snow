@@ -1,209 +1,177 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 
-import { AnimeCard } from '@/components/anime/anime-card'
-import { AnimeCardSkeleton } from '@/components/anime/anime-card-skeleton'
-import { EmptyState } from '@/components/common/empty-state'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useWeeklyCalendar } from '@/hooks/use-anime'
+import {
+  AGE_BANNER_URL,
+  HOME_FRIEND_LINKS,
+  HOME_RECENT,
+  HOME_RECENT_UPDATES,
+  HOME_RECOMMEND,
+  HOME_SCHEDULE,
+  type HomeScheduleItem,
+  type HomeVideoCard as HomeVideoCardData,
+} from '@/data/home-data'
 import { usePageTitle } from '@/hooks/use-page-title'
-import { cn } from '@/lib/utils'
-import type { WeeklySchedule } from '@/types/anime'
 
-/** JS getDay()(0=周日)→ Bangumi weekday id(1=周一 … 7=周日) */
-function todayWeekday(): number {
-  return ((new Date().getDay() + 6) % 7) + 1
+function todayIndex(): number {
+  return (new Date().getDay() + 6) % 7
 }
 
-function SectionTitle({ title, hint, more }: { title: string; hint?: string; more?: ReactNode }) {
+function SectionHeader({ title, moreTo }: { title: string; moreTo?: string }) {
   return (
-    <div className="mb-4 flex items-end justify-between gap-4">
-      <div className="flex items-baseline gap-2">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
-      </div>
-      {more}
+    <div className="age-section-header">
+      <h2 className="age-section-title">
+        {moreTo ? (
+          <Link to={moreTo} className="age-more-link">
+            更多 »
+          </Link>
+        ) : null}
+        {title}
+      </h2>
     </div>
   )
 }
 
-/** 顶部「今日放送」:纯文本列表,样式对照原站最近更新区 */
-function TodayUpdateSection({
-  schedule,
-  weekday,
-  loading,
-}: {
-  schedule: WeeklySchedule[] | undefined
-  weekday: number
-  loading: boolean
-}) {
-  const today = schedule?.find((s) => s.weekday === weekday)
+function CoverFallback() {
   return (
-    <section>
-      <SectionTitle title="今日放送" hint={today?.weekdayCn} />
-      {loading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className="h-5 w-full max-w-md" />
-          ))}
-        </div>
-      ) : !today || today.animes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">今天没有放送安排。</p>
-      ) : (
-        <ul className="divide-y text-sm">
-          {today.animes.slice(0, 10).map((anime) => (
-            <li key={anime.id}>
-              <Link
-                to={`/detail/${anime.id}`}
-                className="flex items-center gap-2 py-1.5 hover:text-primary"
-              >
-                <Badge variant="outline" className="shrink-0">
-                  {anime.platform ?? '动画'}
-                </Badge>
-                <span className="truncate">{anime.titleCn ?? anime.title}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="age-cover-fallback" aria-hidden="true">
+      <span className="age-cover-fallback-mark">✧</span>
+      <span>AGE.TV</span>
+    </div>
+  )
+}
+
+function VideoCard({ item }: { item: HomeVideoCardData }) {
+  const [imageFailed, setImageFailed] = useState(false)
+
+  return (
+    <Link to={`/detail/${item.id}`} className="age-video-card">
+      <div className="age-video-image">
+        {imageFailed ? (
+          <CoverFallback />
+        ) : (
+          <img
+            src={item.coverUrl}
+            alt={item.title}
+            referrerPolicy="no-referrer"
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+          />
+        )}
+        <span className="age-video-episode">{item.episode}</span>
+        <span className="age-video-hover" aria-hidden="true">
+          ▶
+        </span>
+      </div>
+      <div className="age-video-title" title={item.title}>
+        {item.title}
+      </div>
+    </Link>
+  )
+}
+
+function VideoSection({
+  title,
+  moreTo,
+  items,
+}: {
+  title: string
+  moreTo: string
+  items: HomeVideoCardData[]
+}) {
+  return (
+    <section className="age-video-section">
+      <SectionHeader title={title} moreTo={moreTo} />
+      <div className="age-video-grid">
+        {items.map((item) => (
+          <VideoCard key={item.id} item={item} />
+        ))}
+      </div>
     </section>
   )
 }
 
-/** 今日推荐:本周在播条目中评分最高者(数据源无全局推荐接口,取放送表池排序) */
-function RecommendSection({
-  schedule,
-  loading,
-}: {
-  schedule: WeeklySchedule[] | undefined
-  loading: boolean
-}) {
-  const items = useMemo(() => {
-    const pool = schedule?.flatMap((s) => s.animes) ?? []
-    return [...pool]
-      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-      .slice(0, 12)
-  }, [schedule])
+function AppBanner() {
+  const [imageFailed, setImageFailed] = useState(false)
 
   return (
-    <section>
-      <SectionTitle title="今日推荐" hint="在播高分" />
-      {loading ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-          {Array.from({ length: 6 }, (_, i) => (
-            <AnimeCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : items.length === 0 ? (
-        <EmptyState title="暂无推荐数据" />
+    <a
+      href="https://www.ageapp.app?ref=ageweb"
+      target="_blank"
+      rel="noreferrer"
+      className="age-app-banner"
+    >
+      {imageFailed ? (
+        <span className="age-app-banner-fallback">下载 APP 客户端 - 追番更有爱 ♥</span>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-          {items.map((anime) => (
-            <AnimeCard key={anime.id} anime={anime} />
-          ))}
-        </div>
+        <img
+          src={AGE_BANNER_URL}
+          alt="app下载"
+          referrerPolicy="no-referrer"
+          onError={() => setImageFailed(true)}
+        />
       )}
-    </section>
+    </a>
   )
 }
 
-/** 本周放送表:星期切换 + 列表 */
-function WeeklyTableSection({
-  schedule,
-  loading,
-}: {
-  schedule: WeeklySchedule[] | undefined
-  loading: boolean
-}) {
-  const [selected, setSelected] = useState(todayWeekday)
-  const current = schedule?.find((s) => s.weekday === selected)
+function ScheduleRow({ item }: { item: HomeScheduleItem }) {
+  return (
+    <li className={item.finished ? 'age-schedule-item age-schedule-finished' : 'age-schedule-item'}>
+      <Link to={`/detail/${item.id}`} className="age-schedule-row">
+        <span className="age-schedule-name">{item.title}</span>
+        {item.isNew ? <span className="age-schedule-new">New!</span> : null}
+        <span className="age-schedule-sub">{item.episode}</span>
+      </Link>
+    </li>
+  )
+}
+
+function WeeklySection() {
+  const [selected, setSelected] = useState(todayIndex)
+  const current = HOME_SCHEDULE[selected]
 
   return (
-    <section>
-      <SectionTitle title="本周放送" />
-      <div className="mb-4 flex flex-wrap gap-1.5" role="tablist" aria-label="选择星期">
-        {(schedule ?? Array.from({ length: 7 }, (_, i) => ({ weekday: i + 1, animes: [], weekdayCn: '' }))).map(
-          (s) => (
+    <section className="age-text-section age-weekly-section">
+      <SectionHeader title="本周放送列表" />
+      <div className="age-weekly-body">
+        <div className="age-week-tabs" role="tablist" aria-label="选择星期">
+          {HOME_SCHEDULE.map((day, index) => (
             <button
-              key={s.weekday}
+              key={day.label}
               type="button"
               role="tab"
-              aria-selected={s.weekday === selected}
-              onClick={() => setSelected(s.weekday)}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-sm transition-colors',
-                s.weekday === selected
-                  ? 'bg-primary font-medium text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                s.weekday === todayWeekday() && s.weekday !== selected && 'font-medium text-foreground',
-              )}
+              aria-selected={selected === index}
+              aria-controls={`week-panel-${index}`}
+              className={selected === index ? 'is-active' : ''}
+              onClick={() => setSelected(index)}
             >
-              {s.weekdayCn}
+              {day.label}
             </button>
-          ),
-        )}
-      </div>
-      {loading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 5 }, (_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
           ))}
         </div>
-      ) : !current || current.animes.length === 0 ? (
-        <EmptyState title="该日暂无放送" />
-      ) : (
-        <ul className="divide-y rounded-lg border">
-          {current.animes.map((anime) => (
-            <li key={anime.id}>
-              <Link
-                to={`/detail/${anime.id}`}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted/50"
-              >
-                {anime.airDate && isNew(anime.airDate) ? (
-                  <Badge className="shrink-0 bg-red-500 hover:bg-red-500">New!</Badge>
-                ) : null}
-                <span className="truncate font-medium">{anime.titleCn ?? anime.title}</span>
-                <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-                  {anime.platform ?? ''} {anime.episodeCount ? `· ${anime.episodeCount}集` : ''}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+        <div id={`week-panel-${selected}`} role="tabpanel" aria-label={current?.label}>
+          <ul className="age-text-list">
+            {current?.items.map((item) => (
+              <ScheduleRow key={item.id} item={item} />
+            ))}
+          </ul>
+        </div>
+      </div>
     </section>
   )
 }
 
-/** 近两周内首播视为新番 */
-function isNew(airDate: string): boolean {
-  const diff = Date.now() - new Date(airDate).getTime()
-  return diff >= 0 && diff < 14 * 24 * 60 * 60 * 1000
-}
-
-/** 近期开播:按首播日期倒序,对照原站底部带日期的最近更新 */
-function RecentAiringSection({ schedule }: { schedule: WeeklySchedule[] | undefined }) {
-  const items = useMemo(() => {
-    const pool = schedule?.flatMap((s) => s.animes) ?? []
-    return [...pool]
-      .filter((a) => a.airDate)
-      .sort((a, b) => (b.airDate ?? '').localeCompare(a.airDate ?? ''))
-      .slice(0, 10)
-  }, [schedule])
-
+function RecentUpdatesSection() {
   return (
-    <section>
-      <SectionTitle title="近期开播" hint="按首播日期" />
-      <ul className="divide-y rounded-lg border text-sm">
-        {items.map((anime) => (
-          <li key={anime.id}>
-            <Link
-              to={`/detail/${anime.id}`}
-              className="flex items-center gap-3 px-4 py-2 hover:bg-muted/50"
-            >
-              <span className="shrink-0 tabular-nums text-muted-foreground">{anime.airDate}</span>
-              <span className="truncate">{anime.titleCn ?? anime.title}</span>
+    <section className="age-text-section age-recent-list-section">
+      <SectionHeader title="最近更新" />
+      <ul className="age-text-list">
+        {HOME_RECENT_UPDATES.map((item) => (
+          <li key={item.id} className="age-schedule-item">
+            <Link to={`/detail/${item.id}`} className="age-schedule-row">
+              <span className="age-schedule-name">{item.title}</span>
+              <span className="age-schedule-sub">{item.date}</span>
             </Link>
           </li>
         ))}
@@ -212,20 +180,42 @@ function RecentAiringSection({ schedule }: { schedule: WeeklySchedule[] | undefi
   )
 }
 
+function FriendLinksSection() {
+  return (
+    <section className="age-text-section age-friend-section">
+      <SectionHeader title="友情链接" />
+      <div className="age-friend-links">
+        {HOME_FRIEND_LINKS.map((link) => (
+          <a key={link.href} href={link.href} target="_blank" rel="noreferrer">
+            {link.label}
+          </a>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export function HomePage() {
   usePageTitle('首页')
-  const calendar = useWeeklyCalendar()
 
   return (
-    <div className="container space-y-10 py-6">
-      <TodayUpdateSection
-        schedule={calendar.data}
-        weekday={todayWeekday()}
-        loading={calendar.isPending}
-      />
-      <RecommendSection schedule={calendar.data} loading={calendar.isPending} />
-      <WeeklyTableSection schedule={calendar.data} loading={calendar.isPending} />
-      <RecentAiringSection schedule={calendar.data} />
+    <div className="age-main-wrapper">
+      <div className="age-container age-content-container">
+        <section className="age-home-panel">
+          <div className="age-home-grid">
+            <div className="age-home-primary">
+              <VideoSection title="最近更新" moreTo="/update" items={HOME_RECENT} />
+              <AppBanner />
+              <VideoSection title="今日推荐" moreTo="/recommend" items={HOME_RECOMMEND} />
+            </div>
+            <aside className="age-home-sidebar">
+              <WeeklySection />
+              <RecentUpdatesSection />
+            </aside>
+            <FriendLinksSection />
+          </div>
+        </section>
+      </div>
     </div>
   )
 }

@@ -14,7 +14,7 @@ const PAGE_SIZE = 24
 
 export function SearchPage() {
   const [params, setParams] = useSearchParams()
-  const keyword = params.get('kw') ?? ''
+  const keyword = params.get('query') ?? params.get('kw') ?? ''
   const page = Math.max(1, Number(params.get('page')) || 1)
   usePageTitle(keyword ? `搜索:${keyword}` : '搜索')
   const query = useAnimeSearch(keyword, page, PAGE_SIZE)
@@ -65,7 +65,7 @@ export function SearchPage() {
         <Pagination
           page={page}
           totalPages={totalPages}
-          onChange={(p) => setParams({ kw: keyword, page: String(p) })}
+          onChange={(p) => setParams({ query: keyword, page: String(p) })}
         />
       ) : null}
     </div>

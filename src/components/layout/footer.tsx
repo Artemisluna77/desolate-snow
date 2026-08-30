@@ -1,31 +1,20 @@
-const FRIEND_LINKS = [
-  { label: 'Bangumi 番组计划', href: 'https://bgm.tv/' },
-  { label: 'Bangumi API', href: 'https://bangumi.github.io/api/' },
-]
-
 export function Footer() {
   return (
-    <footer className="border-t">
-      <div className="container py-6 space-y-3 text-xs text-muted-foreground">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <span className="font-medium text-foreground">友情链接</span>
-          {FRIEND_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-foreground hover:underline"
-            >
-              {link.label}
-            </a>
-          ))}
+    <footer className="age-footer">
+      <div className="age-footer-container">
+        <div className="age-footer-inner">
+          <p>
+            本网站 AGE动漫
+            提供的资源均系收集于各大视频网站，本网站只提供web页面服务，并不提供影片资源存储，也不参与录制、上传
+          </p>
+          <p>
+            若本站收录的节目无意侵犯了贵司版权，请给我们来信
+            agefans#gmail.com（#更换为@），我们会及时处理和回复，谢谢！
+          </p>
+          <p>
+            Copyright © 2025 <span className="age-footer-heart">♥</span> AGE动漫
+          </p>
         </div>
-        <p>
-          本站为学习用途的界面复刻项目,不存储、不分发任何视频资源;数据来自 Bangumi
-          开放 API,播放内容为公共演示视频。
-        </p>
-        <p>AGE动漫复刻 · {new Date().getFullYear()}</p>
       </div>
     </footer>
   )

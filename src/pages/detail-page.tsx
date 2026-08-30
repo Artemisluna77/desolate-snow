@@ -1,228 +1,234 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Flame, Heart, MessageSquare, Play, ThumbsUp } from 'lucide-react'
 import { Link, useParams } from 'react-router'
-import { Star } from 'lucide-react'
 
-import { AnimeCard } from '@/components/anime/anime-card'
-import { EmptyState } from '@/components/common/empty-state'
-import { RetryErrorState } from '@/components/common/error-state'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useAnimeDetail, useAnimeEpisodes } from '@/hooks/use-anime'
+import { AGE_DETAIL_RECOMMENDATIONS, getAgeDetail, type AgeDetailData, type AgeUpdateItem } from '@/data/age-page-data'
+import { ageCover } from '@/data/home-data'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { useCollections } from '@/stores/collections'
-import { cn } from '@/lib/utils'
-import type { AnimeDetail, Episode } from '@/types/anime'
+import type { AnimeSummary } from '@/types/anime'
 
-/** 演示线路:复刻原站多线路选集结构,播放内容由 PlaybackProvider 提供 */
-const PLAY_SOURCES = ['线路一', '线路二', '线路三']
+const SOURCE_LABELS = ['VIP 西瓜', '非凡', '暴风', '无尽', '计算云']
 
-const STATUS_LABEL: Record<string, string> = {
-  airing: '连载中',
-  finished: '已完结',
-  upcoming: '未开播',
+function toCollectionSummary(anime: AgeDetailData): AnimeSummary {
+  return {
+    id: anime.id,
+    title: anime.title,
+    titleCn: null,
+    coverUrl: anime.coverUrl,
+    rating: null,
+    rank: null,
+    airDate: anime.airDate,
+    episodeCount: anime.episodeCount,
+    tags: anime.tags,
+    platform: anime.platform,
+  }
 }
 
-const META_KEYS = ['中文名', '别名', '原作', '制作公司', '动画制作', '官方网站']
-
-function CollectButton({ anime }: { anime: AnimeDetail }) {
-  const collected = useCollections((s) => s.items.some((i) => i.animeId === anime.id))
-  const toggle = useCollections((s) => s.toggle)
+function CollectButton({ anime }: { anime: AgeDetailData }) {
+  const collected = useCollections((state) => state.has(anime.id))
+  const toggle = useCollections((state) => state.toggle)
   return (
-    <Button
-      variant={collected ? 'secondary' : 'outline'}
-      size="sm"
-      className={cn('h-7', collected && 'text-primary')}
-      onClick={() => toggle(anime)}
-    >
-      <Star className={cn('size-3.5', collected && 'fill-current')} />
-      {collected ? '已收藏' : '收藏'}
-    </Button>
+    <div className="age-detail-collect">
+      <button
+        type="button"
+        aria-label={collected ? '取消收藏' : '收藏'}
+        aria-pressed={collected}
+        onClick={() => toggle(toCollectionSummary(anime))}
+      >
+        <Heart className={collected ? 'is-filled' : undefined} />
+      </button>
+    </div>
   )
 }
 
-function DetailSkeleton() {
+function DetailInfo({ anime }: { anime: AgeDetailData }) {
+  const entries = [
+    ['地区', anime.region],
+    ['动画种类', anime.platform],
+    ['原版名称', anime.original],
+    ['其他名称', anime.other],
+    ['原作', anime.author],
+    ['制作公司', anime.company],
+    ['首播时间', anime.airDate],
+    ['播放状态', anime.status],
+    ['剧情类型', anime.genres],
+    ['标签', anime.tags.join(' ')],
+    ...(anime.website ? [['官方网站', anime.website]] : []),
+  ]
   return (
-    <div className="container space-y-6 py-6">
-      <Skeleton className="h-8 w-2/3 max-w-lg" />
-      <div className="flex gap-6">
-        <Skeleton className="aspect-[3/4] w-40 shrink-0 rounded-lg sm:w-48" />
-        <div className="flex-1 space-y-3">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-4/5" />
-          <Skeleton className="h-4 w-3/5" />
-          <Skeleton className="h-20 w-full" />
+    <section className="age-detail-box">
+      <div className="age-detail-box-body">
+        <h2>基本信息</h2>
+        <ul className="age-detail-info-list">
+          {entries.map(([label, value]) => (
+            <li key={label}>
+              <span className="age-detail-info-label">{label}：</span>
+              <span className="age-detail-info-value">
+                {label === '官方网站' ? (
+                  <a href={value} target="_blank" rel="noreferrer">
+                    {value}
+                  </a>
+                ) : (
+                  value
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
+function RelatedAnime({ anime }: { anime: AgeDetailData }) {
+  return (
+    <section className="age-detail-box age-detail-related">
+      <div className="age-detail-box-body">
+        <h2>相关动画</h2>
+        <ul>
+          {anime.related.map((item) => (
+            <li key={item.id}>
+              <Link to={`/detail/${item.id}`}>{item.title}</Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
+function EpisodePlaylist({ anime }: { anime: AgeDetailData }) {
+  const [source, setSource] = useState(0)
+  const episodes = useMemo(
+    () => Array.from({ length: anime.episodeCount }, (_, index) => index + 1),
+    [anime.episodeCount],
+  )
+
+  return (
+    <section className="age-detail-playlist">
+      <div className="age-detail-section-title">
+        <span>
+          <Play /> 在线播放
+        </span>
+        <small>视频如果未正常播放或者卡顿，请切换播放源，优先选择 VIP 播放源!</small>
+      </div>
+      <hr />
+      <div className="age-detail-source-tabs" role="tablist" aria-label="播放源">
+        {SOURCE_LABELS.map((label, index) => (
+          <button
+            key={label}
+            type="button"
+            role="tab"
+            aria-selected={source === index}
+            className={source === index ? 'is-active' : undefined}
+            onClick={() => setSource(index)}
+          >
+            {index === 0 ? <span>VIP</span> : null} {label.replace('VIP ', '')}
+          </button>
+        ))}
+      </div>
+      <div className="age-detail-episode-panel" role="tabpanel">
+        <ul>
+          {episodes.map((episode) => (
+            <li key={episode}>
+              <Link to={`/play/${anime.id}/${source + 1}/${episode}`}>
+                第{String(episode).padStart(2, '0')}集
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
+function RecommendationCard({ item }: { item: AgeUpdateItem }) {
+  return (
+    <div className="age-detail-recommend-column">
+      <div className="age-detail-recommend-card">
+        <div className="age-detail-recommend-image">
+          <Link to={`/detail/${item.id}`} title={item.title}>
+            <img src={ageCover(item.id)} alt={item.title} loading="lazy" />
+            <span>{item.episode}</span>
+          </Link>
+        </div>
+        <div className="age-detail-recommend-title">
+          <Link to={`/detail/${item.id}`} title={item.title}>
+            {item.title}
+          </Link>
         </div>
       </div>
     </div>
   )
 }
 
-function EpisodeLinks({ animeId, episodes }: { animeId: string; episodes: Episode[] }) {
-  const [source, setSource] = useState(0)
-  const main = episodes.filter((e) => e.type === 'main' || e.type === 'other')
-  const shown = main.length > 0 ? main : episodes
-
+function Recommendations() {
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <CardTitle className="mr-2 text-base">在线播放</CardTitle>
-          {PLAY_SOURCES.map((label, i) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => setSource(i)}
-              aria-pressed={source === i}
-              className={cn(
-                'rounded-md px-3 py-1 text-xs transition-colors',
-                source === i
-                  ? 'bg-primary font-medium text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-              )}
-            >
-              {label}
-            </button>
+    <section className="age-detail-recommendations">
+      <div className="age-detail-section-title">
+        <span>
+          <ThumbsUp /> 相关推荐
+        </span>
+      </div>
+      <hr />
+      <div className="age-detail-recommend-body">
+        <div className="age-detail-recommend-grid">
+          {AGE_DETAIL_RECOMMENDATIONS.map((item) => (
+            <RecommendationCard key={item.id} item={item} />
           ))}
         </div>
-        <p className="text-xs text-muted-foreground">播放异常时可切换线路;当前为演示内容。</p>
-      </CardHeader>
-      <CardContent>
-        {shown.length === 0 ? (
-          <p className="text-sm text-muted-foreground">暂无分集数据。</p>
-        ) : (
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
-            {shown.map((ep) => (
-              <Link
-                key={ep.id}
-                to={`/play/${animeId}/${source + 1}/${ep.number}`}
-                className="rounded-md border px-2 py-1.5 text-center text-xs hover:border-primary hover:text-primary"
-              >
-                {ep.titleCn ?? `第${ep.number}集`}
-              </Link>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }
 
 export function DetailPage() {
   const { id } = useParams()
-  const animeId = id ? Number(id) : null
-  const valid = animeId !== null && Number.isInteger(animeId) && animeId > 0
-  const detail = useAnimeDetail(valid ? animeId : null)
-  const episodes = useAnimeEpisodes(valid ? animeId : null)
-  usePageTitle(detail.data ? (detail.data.titleCn ?? detail.data.title) : '番剧详情')
+  const animeId = id ? Number(id) : Number.NaN
+  const valid = Number.isInteger(animeId) && animeId > 0
+  const anime = getAgeDetail(valid ? animeId : 0)
+  usePageTitle(valid ? anime.title : '番剧详情')
 
   if (!valid) {
-    return <EmptyState title="无效的条目 ID" />
+    return (
+      <div className="age-page-main">
+        <div className="age-container">
+          <section className="age-page-panel age-detail-invalid">无效的条目 ID</section>
+        </div>
+      </div>
+    )
   }
-  if (detail.isPending) {
-    return <DetailSkeleton />
-  }
-  if (detail.isError || !detail.data) {
-    return <RetryErrorState onRetry={() => detail.refetch()} />
-  }
-
-  const anime = detail.data
-  const title = anime.titleCn ?? anime.title
-  const metaEntries = Object.entries(anime.meta).filter(([key]) => META_KEYS.includes(key))
 
   return (
-    <div className="container space-y-6 py-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{title}</h1>
-        {anime.titleCn ? <p className="mt-1 text-sm text-muted-foreground">{anime.title}</p> : null}
-        <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          {anime.rating != null ? (
-            <span className="flex items-center gap-1">
-              <Star className="size-4 fill-amber-400 text-amber-400" />
-              <span className="font-medium text-foreground">{anime.rating.toFixed(1)}</span>
-            </span>
-          ) : null}
-          {anime.rank != null && anime.rank > 0 ? <span>排名 #{anime.rank}</span> : null}
-          <Badge variant="secondary">{STATUS_LABEL[anime.status]}</Badge>
-          <CollectButton anime={anime} />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-6 md:flex-row">
-        <div className="w-40 shrink-0 sm:w-48">
-          <div className="aspect-[3/4] overflow-hidden rounded-lg border bg-muted">
-            {anime.coverUrl ? (
-              <img src={anime.coverUrl} alt={title} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                暂无封面
+    <div className="age-page-main">
+      <div className="age-container">
+        <section className="age-page-panel age-detail-panel">
+          <div className="age-detail-layout">
+            <aside className="age-detail-left">
+              <div className="age-detail-cover">
+                <img src={anime.coverUrl} alt={anime.title} width="256" height="356" />
+                <CollectButton anime={anime} />
               </div>
-            )}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-1">
-            {anime.tags.map((tag) => (
-              <Badge key={tag} variant="outline" className="text-[10px]">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        </div>
+              <div className="age-detail-stats">
+                <div><Flame /> {anime.stats.views}</div>
+                <div><MessageSquare /> {anime.stats.comments}</div>
+                <div><Heart /> {anime.stats.likes}</div>
+              </div>
+              <DetailInfo anime={anime} />
+              <RelatedAnime anime={anime} />
+            </aside>
 
-        <Card className="min-w-0 flex-1">
-          <CardContent className="pt-6">
-            <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-              {metaEntries.map(([key, value]) => (
-                <div key={key} className="flex gap-2">
-                  <dt className="w-20 shrink-0 text-muted-foreground">{key}</dt>
-                  <dd className="min-w-0 break-words">{value}</dd>
-                </div>
-              ))}
-              {anime.platform ? (
-                <div className="flex gap-2">
-                  <dt className="w-20 shrink-0 text-muted-foreground">动画种类</dt>
-                  <dd>{anime.platform}</dd>
-                </div>
-              ) : null}
-              {anime.airDate ? (
-                <div className="flex gap-2">
-                  <dt className="w-20 shrink-0 text-muted-foreground">首播时间</dt>
-                  <dd>{anime.airDate}</dd>
-                </div>
-              ) : null}
-              {anime.episodeCount ? (
-                <div className="flex gap-2">
-                  <dt className="w-20 shrink-0 text-muted-foreground">话数</dt>
-                  <dd>{anime.episodeCount}</dd>
-                </div>
-              ) : null}
-            </dl>
-          </CardContent>
-        </Card>
+            <main className="age-detail-right">
+              <h1>{anime.title}</h1>
+              <hr />
+              <p className="age-detail-description">{anime.summary}</p>
+              <EpisodePlaylist anime={anime} />
+              <Recommendations />
+            </main>
+          </div>
+        </section>
       </div>
-
-      <EpisodeLinks animeId={String(anime.id)} episodes={episodes.data ?? []} />
-      {episodes.isPending ? <Skeleton className="h-32 w-full rounded-lg" /> : null}
-
-      {anime.summary ? (
-        <section>
-          <h2 className="mb-2 text-base font-semibold">剧情简介</h2>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
-            {anime.summary}
-          </p>
-        </section>
-      ) : null}
-
-      {anime.series.length > 0 ? (
-        <section>
-          <h2 className="mb-3 text-base font-semibold">系列作品</h2>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-            {anime.series.slice(0, 12).map((s) => (
-              <AnimeCard key={s.id} anime={s} />
-            ))}
-          </div>
-        </section>
-      ) : null}
     </div>
   )
 }
