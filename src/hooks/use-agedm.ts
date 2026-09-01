@@ -61,5 +61,9 @@ export function useAgedmPlayback(id: number | null, source: number, episode: num
     enabled: id !== null,
     staleTime: 0,
     retry: 1,
+    // 播放地址里的 token 每次解析都不同，任何 refetch 都会更换 iframe src 导致播放器重载。
+    // 因此播放会话存活期内不自动换源，重新进入播放页时才重新解析。
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   })
 }

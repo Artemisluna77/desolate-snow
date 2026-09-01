@@ -15,3 +15,4 @@
 ## Comments
 
 - 2026-08-30:浏览器验证播放器/线路切换/选集侧栏渲染正常,视频用 gtv-videos-bucket 公共演示片。观看历史按番剧维度去重(保留最新集数),watchedAt 倒序,上限 50 条。
+- 2026-09-01:修复切浏览器页签回来后播放器从头重播。根因:AGE 播放 token 每次解析都不同,而 playback 查询 staleTime:0 + 默认 refetchOnWindowFocus,切回页签即 refetch 换新 token,iframe src 变化导致播放器重载。修复:playback 查询关闭 refetchOnWindowFocus/refetchOnReconnect(播放会话内不换源);BFF /play 复用 detail 5 分钟缓存保证解析幂等(兜底任何重取路径)。Playwright 模拟 visibilitychange 回路验证:修复前二次请求+src 变化(红),修复后无请求+src 不变(绿)。

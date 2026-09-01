@@ -470,8 +470,18 @@ function validateYear(value) {
   return year
 }
 
+async function fetchDetailRaw(id) {
+  // 播放 token 是带时间因子的加密串，每次实时解析都会产出不同 URL，
+  // 导致前端任何重取都会更换 iframe 地址并重载播放器。因此复用缓存内的原始
+  // 详情数据，保证同一集数在缓存窗口内解析结果幂等（与 /detail 路由 TTL 一致）。
+  const result = await fromCache('detail-raw:' + id, 300_000, async () =>
+    fetchUpstream('detail/' + id),
+  )
+  return result.data
+}
+
 async function getPlayPayload(id, sourceIndex, episodeNumber) {
-  const raw = await fetchUpstream('detail/' + id)
+  const raw = await fetchDetailRaw(id)
   const detail = normalizeDetail(raw)
   const keys = sourceKeys(raw?.video?.playlists)
   const sourceKey = keys[sourceIndex - 1]
