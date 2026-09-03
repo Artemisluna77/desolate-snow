@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router'
 
+import { Backtop } from '@/components/layout/backtop'
 import { Footer } from '@/components/layout/footer'
 import { Header } from '@/components/layout/header'
 
@@ -11,6 +12,7 @@ export function RootLayout() {
         <Outlet />
       </main>
       <Footer />
+      <Backtop />
     </div>
   )
 }
