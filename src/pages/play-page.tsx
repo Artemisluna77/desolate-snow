@@ -227,6 +227,9 @@ export function PlayPage() {
   const requestedSource = Math.max(1, Number(source) || 1)
   const episodeNumber = Math.max(1, Number(episode) || 1)
   const [episodeAscending, setEpisodeAscending] = useState(true)
+  // 选集区当前浏览的线路页签是纯本地状态:切换页签只换列表,不打断正在播放的源(对齐官方 tab 行为)。
+  // from 记录打开页签时的播放线路,URL 线路变化(点了别的集/线路)后浏览状态自动跟随 URL。
+  const [browsedSource, setBrowsedSource] = useState<{ src: number; from: number } | null>(null)
 
   const detailQuery = useAgedmDetail(valid ? animeId : null)
   const fallbackAnime = useMemo(
@@ -256,7 +259,16 @@ export function PlayPage() {
     currentIndex >= 0 && currentIndex < mainEpisodes.length - 1
       ? mainEpisodes[currentIndex + 1]
       : undefined
-  const displayedEpisodes = episodeAscending ? mainEpisodes : [...mainEpisodes].reverse()
+  // 浏览的线路:未点过页签时跟随正在播放的线路;URL 线路变化后浏览状态自动失效回退
+  const activeTabIndex =
+    browsedSource && browsedSource.from === sourceIndex
+      ? Math.min(browsedSource.src, sourceOptions.length - 1)
+      : sourceIndex
+  const browsedSource_ = sourceOptions[activeTabIndex] ?? sourceOptions[0]
+  const browsedEpisodes = browsedSource_?.episodes ?? []
+  const displayedBrowsedEpisodes = episodeAscending
+    ? browsedEpisodes
+    : [...browsedEpisodes].reverse()
 
   usePageTitle('播放 ' + anime.title + ' 第' + episodeNumber + '集')
 
@@ -327,9 +339,9 @@ export function PlayPage() {
                   key={item.key}
                   type="button"
                   role="tab"
-                  aria-selected={index === sourceIndex}
-                  className={index === sourceIndex ? 'is-active' : undefined}
-                  onClick={() => switchTo(episodeNumber, index)}
+                  aria-selected={index === activeTabIndex}
+                  className={index === activeTabIndex ? 'is-active' : undefined}
+                  onClick={() => setBrowsedSource({ src: index, from: sourceIndex })}
                 >
                   {item.isVip ? <span>VIP</span> : null} {item.label}
                 </button>
@@ -347,18 +359,25 @@ export function PlayPage() {
           </div>
           <div className="age-detail-episode-panel" role="tabpanel">
             <ul>
-              {displayedEpisodes.map((item) => (
-                <li key={item.number}>
-                  <button
-                    type="button"
-                    className={item.number === episodeNumber ? 'is-active' : undefined}
-                    aria-current={item.number === episodeNumber}
-                    onClick={() => switchTo(item.number)}
-                  >
-                    {item.title}
-                  </button>
-                </li>
-              ))}
+              {displayedBrowsedEpisodes.map((item) => {
+                const isPlaying = activeTabIndex === sourceIndex && item.number === episodeNumber
+                return (
+                  <li key={item.number}>
+                    <button
+                      type="button"
+                      aria-current={isPlaying}
+                      onClick={() => switchTo(item.number, activeTabIndex)}
+                    >
+                      {item.title}
+                    </button>
+                    {isPlaying ? (
+                      <div className="age-play-episode-playing" aria-hidden="true">
+                        <div className="loader-play" />
+                      </div>
+                    ) : null}
+                  </li>
+                )
+              })}
               {mainEpisodes.length === 0 ? (
                 <li className="age-play-episode-empty">暂无分集数据</li>
               ) : null}
