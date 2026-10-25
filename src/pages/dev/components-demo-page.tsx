@@ -8,7 +8,7 @@ import { ErrorState, RetryErrorState } from '@/components/common/error-state'
 import { Button } from '@/components/ui/button'
 import { Pagination } from '@/components/ui/pagination'
 import { Skeleton } from '@/components/ui/skeleton'
-import { mockAnimes } from '@/api/mock-source'
+import { AGE_CATALOG_ITEMS } from '@/data/age-page-data'
 
 const SORT_OPTIONS: FilterOption[] = [
   { value: 'time', label: '按时间' },
@@ -33,8 +33,22 @@ export function ComponentsDemoPage() {
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">AnimeCard</h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
-          {mockAnimes.slice(0, 6).map((anime) => (
-            <AnimeCard key={anime.id} anime={anime} />
+          {AGE_CATALOG_ITEMS.slice(0, 6).map((item) => (
+            <AnimeCard
+              key={item.id}
+              anime={{
+                id: item.id,
+                title: item.title,
+                titleCn: null,
+                coverUrl: item.coverUrl ?? null,
+                rating: null,
+                rank: null,
+                airDate: item.airDate,
+                episodeCount: Number(item.episode.match(/\d+/g)?.at(-1) ?? 0) || null,
+                tags: item.genres.split(/\s+/).filter(Boolean),
+                platform: item.platform,
+              }}
+            />
           ))}
         </div>
       </section>

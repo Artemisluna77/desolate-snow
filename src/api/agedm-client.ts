@@ -1,24 +1,12 @@
-import {
-  AGE_CATALOG_ITEMS,
-  AGE_CATALOG_TOTAL,
-  AGE_RANK_BOARDS,
-  AGE_UPDATE_GROUPS,
-  getAgeDetail,
-  type AgeCatalogItem,
-  type AgeDetailData,
-  type AgeRankBoard,
-  type AgeUpdateGroup,
-} from '@/data/age-page-data'
-import {
-  HOME_RECENT,
-  HOME_RECENT_UPDATES,
-  HOME_RECOMMEND,
-  HOME_SCHEDULE,
-  type HomeRecentUpdate,
-  type HomeScheduleDay,
-  type HomeVideoCard,
-} from '@/data/home-data'
-import type { AnimeSummary, PagedResult } from '@/types/anime'
+import type {
+  AgeAnimeSummary,
+  AgeCatalogItem,
+  AgeDetailData,
+  AgePagedResult,
+  AgeRankBoard,
+  AgeUpdateGroup,
+  AgedmHomeData,
+} from '@/types/agedm'
 
 export type AgedmDataSource = 'live' | 'stale' | 'fallback'
 
@@ -30,13 +18,6 @@ export interface AgedmMeta {
 export interface AgedmEnvelope<T> {
   data: T
   meta: AgedmMeta
-}
-
-export interface AgedmHomeData {
-  latest: HomeVideoCard[]
-  recommend: HomeVideoCard[]
-  schedule: HomeScheduleDay[]
-  recentUpdates: HomeRecentUpdate[]
 }
 
 export interface AgedmCatalogData {
@@ -108,22 +89,6 @@ async function requestEnvelope<T>(path: string, signal?: AbortSignal): Promise<A
   return payload as AgedmEnvelope<T>
 }
 
-async function withFallback<T>(
-  path: string,
-  fallback: T,
-  signal?: AbortSignal,
-): Promise<AgedmEnvelope<T>> {
-  try {
-    return await requestEnvelope<T>(path, signal)
-  } catch (error) {
-    console.warn('[agedm-client] ' + path + ' 请求失败，使用本地兜底数据', error)
-    return {
-      data: fallback,
-      meta: { source: 'fallback', fetchedAt: new Date().toISOString() },
-    }
-  }
-}
-
 function encodeQuery(params: AgedmCatalogParams): string {
   const query = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
@@ -134,63 +99,28 @@ function encodeQuery(params: AgedmCatalogParams): string {
   return serialized ? '?' + serialized : ''
 }
 
-const FALLBACK_HOME: AgedmHomeData = {
-  latest: HOME_RECENT,
-  recommend: HOME_RECOMMEND,
-  schedule: HOME_SCHEDULE,
-  recentUpdates: HOME_RECENT_UPDATES,
-}
-
-const FALLBACK_CATALOG: AgedmCatalogData = {
-  total: AGE_CATALOG_TOTAL,
-  page: 1,
-  pageSize: 24,
-  items: AGE_CATALOG_ITEMS,
-}
-
-const FALLBACK_UPDATE: AgedmUpdateData = {
-  total: AGE_CATALOG_TOTAL,
-  items: AGE_UPDATE_GROUPS.flatMap((group) => group.items),
-  groups: AGE_UPDATE_GROUPS,
-}
-
-const FALLBACK_RANK: AgedmRankData = {
-  year: 'all',
-  total: AGE_RANK_BOARDS.reduce((total, board) => total + board.items.length, 0),
-  boards: AGE_RANK_BOARDS,
-  updatedAt: new Date().toISOString(),
-}
-
+/**
+ * 纯数据访问层：只负责请求 BFF 并返回 envelope，失败即抛错。
+ * 降级策略（pending 占位 / 失败兜底）统一坐在 use-agedm 的 seam 后面。
+ */
 export function getAgedmHome(signal?: AbortSignal) {
-  return withFallback<AgedmHomeData>('/home', FALLBACK_HOME, signal)
+  return requestEnvelope<AgedmHomeData>('/home', signal)
 }
 
 export function getAgedmCatalog(params: AgedmCatalogParams, signal?: AbortSignal) {
-  return withFallback<AgedmCatalogData>(
-    '/catalog' + encodeQuery(params),
-    { ...FALLBACK_CATALOG, page: params.page ?? 1, pageSize: params.size ?? 24 },
-    signal,
-  )
+  return requestEnvelope<AgedmCatalogData>('/catalog' + encodeQuery(params), signal)
 }
 
 export function getAgedmUpdate(page = 1, size = 24, signal?: AbortSignal) {
-  return withFallback<AgedmUpdateData>(
-    '/update?page=' + page + '&size=' + size,
-    FALLBACK_UPDATE,
-    signal,
-  )
+  return requestEnvelope<AgedmUpdateData>('/update?page=' + page + '&size=' + size, signal)
 }
 
 export function getAgedmRank(year = 'all', signal?: AbortSignal) {
-  return withFallback<AgedmRankData>(
-    '/rank?year=' + encodeURIComponent(year),
-    { ...FALLBACK_RANK, year },
-    signal,
-  )
+  return requestEnvelope<AgedmRankData>('/rank?year=' + encodeURIComponent(year), signal)
 }
 
 export function getAgedmDetail(id: number, signal?: AbortSignal) {
-  return withFallback<AgeDetailData>('/detail/' + id, getAgeDetail(id), signal)
+  return requestEnvelope<AgeDetailData>('/detail/' + id, signal)
 }
 
 export function getAgedmPlayback(
@@ -207,8 +137,8 @@ export async function searchAgedm(
   page = 1,
   size = 24,
   signal?: AbortSignal,
-): Promise<PagedResult<AnimeSummary>> {
-  const result = await requestEnvelope<PagedResult<AnimeSummary>>(
+): Promise<AgePagedResult<AgeAnimeSummary>> {
+  const result = await requestEnvelope<AgePagedResult<AgeAnimeSummary>>(
     '/search?query=' + encodeURIComponent(keyword) + '&page=' + page + '&size=' + size,
     signal,
   )

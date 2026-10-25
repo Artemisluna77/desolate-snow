@@ -6,7 +6,7 @@ import { AnimeCardSkeleton } from '@/components/anime/anime-card-skeleton'
 import { EmptyState } from '@/components/common/empty-state'
 import { RetryErrorState } from '@/components/common/error-state'
 import { Pagination } from '@/components/ui/pagination'
-import { useAnimeSearch } from '@/hooks/use-anime'
+import { useAgedmSearch } from '@/hooks/use-agedm'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { useSearchHistory } from '@/stores/search-history'
 
@@ -17,7 +17,7 @@ export function SearchPage() {
   const keyword = params.get('query') ?? params.get('kw') ?? ''
   const page = Math.max(1, Number(params.get('page')) || 1)
   usePageTitle(keyword ? `搜索:${keyword}` : '搜索')
-  const query = useAnimeSearch(keyword, page, PAGE_SIZE)
+  const query = useAgedmSearch(keyword, page, PAGE_SIZE)
 
   useEffect(() => {
     const kw = keyword.trim()

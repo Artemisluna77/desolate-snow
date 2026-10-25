@@ -51,7 +51,7 @@ export function HistoryPage() {
               <Button variant="outline" size="sm" asChild>
                 <Link to={`/play/${item.animeId}/${item.source}/${item.episode}`}>继续播放</Link>
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => remove(item.animeId)}>
+              <Button variant="ghost" size="sm" onClick={() => remove(String(item.animeId))}>
                 删除
               </Button>
             </li>

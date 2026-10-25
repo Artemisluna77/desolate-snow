@@ -1,9 +1,10 @@
 import { Link } from 'react-router'
 
-import { AGE_UPDATE_GROUPS, type AgeUpdateItem } from '@/data/age-page-data'
 import { ageCover } from '@/data/home-data'
 import { useAgedmUpdate } from '@/hooks/use-agedm'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { DegradedNotice } from '@/components/common/degraded-notice'
+import type { AgeUpdateItem } from '@/types/agedm'
 
 function UpdateCard({ item }: { item: AgeUpdateItem }) {
   return (
@@ -46,12 +47,13 @@ function UpdateGroup({ label, items }: { label: string; items: AgeUpdateItem[] }
 /** 一周更新：按目标站点的日期分组，以六列海报墙呈现。 */
 export function WeeklyPage() {
   usePageTitle('一周更新')
-  const updateQuery = useAgedmUpdate(1, 60)
-  const groups = updateQuery.data?.data.groups ?? AGE_UPDATE_GROUPS
+  const { data: updateData, isDegraded } = useAgedmUpdate(1, 60)
+  const groups = updateData.groups
 
   return (
     <div className="age-page-main">
       <div className="age-container">
+        <DegradedNotice show={isDegraded} />
         <section className="age-page-panel age-update-panel">
           {groups.map((group) => (
             <UpdateGroup key={group.label} label={group.label} items={group.items} />

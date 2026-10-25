@@ -26,7 +26,7 @@ function CollectionCard({ entry }: { entry: ReturnType<typeof useCollections.get
         variant="ghost"
         size="sm"
         className="mt-1 h-7 w-full text-xs text-muted-foreground"
-        onClick={() => remove(entry.animeId)}
+        onClick={() => remove(String(entry.animeId))}
       >
         取消收藏
       </Button>

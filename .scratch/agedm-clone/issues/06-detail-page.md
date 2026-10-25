@@ -16,3 +16,4 @@
 ## Comments
 
 - 2026-08-30:信息卡仅保留白名单字段(中文名/别名/原作/制作公司/动画制作/官网 + 种类/首播/话数),infobox 的 staff 名单不入卡。分集数据修正:正确端点为 GET /v0/episodes?subject_id={id}(旧路径 /v0/subjects/{id}/episodes 大量 404),limit 上限实测 500(2000 返回 400);无分集条目(如 EVA)容错展示「暂无分集数据」。浏览器验证 12 集选集区渲染正常。
+- 2026-10-25:架构深化(候选1+2,见 .scratch 架构走查报告):删除本页的 SOURCE_LABELS/fallbackSources 客户端线路虚构,改为消费数据层线路契约(AgeDetailData.sources 恒非空,降级快照由 getAgeDetail 合成中性「线路 N」);选集区/统计条/信息字段表/推荐卡改用 components/anime 展示域模块(EpisodePanel/AnimeStats/AnimeInfoList/RecommendCard),字段顺序等官方对齐知识内置 variant;推荐补位统一为上游优先+本地池补足 12(getAgeRecommendations)。选集为 Link(hrefOf),页签本地切换。契约测试见 age-page-data.test.ts(vitest)。

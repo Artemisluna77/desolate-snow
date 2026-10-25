@@ -2123,7 +2123,16 @@
 }
 
 /* 播放页选集区:官方 play 页为 9 列(11.111%),li 相对定位用于承载"正在播放"遮罩 */
-.age-play-panel .age-detail-episode-panel ul {
+/* 选集面板（episode-panel module）：hr 与 9 列变体 */
+.age-episode-panel > hr {
+  height: 1.3333px;
+  padding: 0;
+  margin: 8px 0;
+  border: 0;
+  border-top: 1px solid rgb(255 255 255 / 10%);
+}
+
+.age-detail-episode-panel ul.is-cols-9 {
   grid-template-columns: repeat(9, minmax(0, 1fr));
 }
 
@@ -2230,6 +2239,16 @@
 .age-play-episode-nav svg {
   width: 14px;
   height: 14px;
+}
+
+.age-degraded-notice {
+  padding: 6px 12px;
+  margin-bottom: 12px;
+  color: #ffc107;
+  font-size: 12px;
+  background: rgb(255 193 7 / 8%);
+  border: 1px solid rgb(255 193 7 / 35%);
+  border-radius: 4px;
 }
 
 .age-play-playback-tip {
@@ -2383,7 +2402,8 @@
     height: auto;
   }
 
-  .age-detail-episode-panel ul {
+  .age-detail-episode-panel ul,
+  .age-detail-episode-panel ul.is-cols-9 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 

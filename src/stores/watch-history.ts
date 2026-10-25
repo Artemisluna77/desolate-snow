@@ -1,5 +1,4 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createBoundedListStore } from '@/stores/bounded-list'
 
 export interface WatchHistoryEntry {
   animeId: number
@@ -9,30 +8,10 @@ export interface WatchHistoryEntry {
   watchedAt: number
 }
 
-interface WatchHistoryState {
-  /** 按番剧维度保留最新一条,watchedAt 倒序 */
-  items: WatchHistoryEntry[]
-  record: (entry: Omit<WatchHistoryEntry, 'watchedAt'>) => void
-  remove: (animeId: number) => void
-  clear: () => void
-}
-
-const MAX_ITEMS = 50
-
-export const useWatchHistory = create<WatchHistoryState>()(
-  persist(
-    (set) => ({
-      items: [],
-      record: (entry) =>
-        set((s) => ({
-          items: [{ ...entry, watchedAt: Date.now() }, ...s.items.filter((i) => i.animeId !== entry.animeId)].slice(
-            0,
-            MAX_ITEMS,
-          ),
-        })),
-      remove: (animeId) => set((s) => ({ items: s.items.filter((i) => i.animeId !== animeId) })),
-      clear: () => set({ items: [] }),
-    }),
-    { name: 'watch-history' },
-  ),
-)
+/** 观看历史：按番剧维度去重（保留最新集数），上限 50 条，watchedAt 倒序。 */
+export const useWatchHistory = createBoundedListStore<Omit<WatchHistoryEntry, 'watchedAt'>, WatchHistoryEntry>({
+  name: 'watch-history',
+  cap: 50,
+  keyOf: (entry) => String(entry.animeId),
+  decorate: (entry) => ({ ...entry, watchedAt: Date.now() }),
+})

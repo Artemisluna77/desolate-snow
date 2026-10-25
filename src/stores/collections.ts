@@ -1,7 +1,4 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-
-import type { AnimeSummary } from '@/types/anime'
+import { createBoundedListStore } from '@/stores/bounded-list'
 
 export interface CollectionEntry {
   animeId: number
@@ -14,42 +11,9 @@ export interface CollectionEntry {
   addedAt: number
 }
 
-interface CollectionsState {
-  items: CollectionEntry[]
-  has: (animeId: number) => boolean
-  toggle: (anime: AnimeSummary) => void
-  remove: (animeId: number) => void
-  clear: () => void
-}
-
-export const useCollections = create<CollectionsState>()(
-  persist(
-    (set, get) => ({
-      items: [],
-      has: (animeId) => get().items.some((i) => i.animeId === animeId),
-      toggle: (anime) =>
-        set((s) =>
-          s.items.some((i) => i.animeId === anime.id)
-            ? { items: s.items.filter((i) => i.animeId !== anime.id) }
-            : {
-                items: [
-                  {
-                    animeId: anime.id,
-                    title: anime.title,
-                    titleCn: anime.titleCn,
-                    coverUrl: anime.coverUrl,
-                    episodeCount: anime.episodeCount,
-                    rating: anime.rating,
-                    airDate: anime.airDate,
-                    addedAt: Date.now(),
-                  },
-                  ...s.items,
-                ],
-              },
-        ),
-      remove: (animeId) => set((s) => ({ items: s.items.filter((i) => i.animeId !== animeId) })),
-      clear: () => set({ items: [] }),
-    }),
-    { name: 'collections' },
-  ),
-)
+/** 收藏：按番剧 id 去重，上限 200 条（原实现无上限，候选 8 收敛策略漂移）。 */
+export const useCollections = createBoundedListStore<CollectionEntry>({
+  name: 'collections',
+  cap: 200,
+  keyOf: (entry) => String(entry.animeId),
+})

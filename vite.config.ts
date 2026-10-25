@@ -16,14 +16,6 @@ export default defineConfig({
         target: 'http://127.0.0.1:8787',
         changeOrigin: true,
       },
-      '/api/bgm': {
-        target: 'https://api.bgm.tv',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/bgm/, ''),
-        headers: {
-          'User-Agent': 'desolate-snow/0.1.0 (agedm clone study project)',
-        },
-      },
     },
   },
 })

@@ -1,28 +1,9 @@
-export interface HomeVideoCard {
-  id: number
-  title: string
-  coverUrl: string
-  episode: string
-}
-
-export interface HomeScheduleItem {
-  id: number
-  title: string
-  episode: string
-  isNew?: boolean
-  finished?: boolean
-}
-
-export interface HomeScheduleDay {
-  label: string
-  items: HomeScheduleItem[]
-}
-
-export interface HomeRecentUpdate {
-  id: number
-  title: string
-  date: string
-}
+import type {
+  HomeRecentUpdate,
+  HomeScheduleDay,
+  HomeScheduleItem,
+  HomeVideoCard,
+} from '@/types/agedm'
 
 /** 原站使用的封面代理地址，避免直接引用带防盗链的源图。 */
 export function ageCover(id: number): string {

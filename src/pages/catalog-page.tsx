@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router'
 
-import { AGE_CATALOG_ITEMS, AGE_CATALOG_TOTAL, type AgeCatalogItem } from '@/data/age-page-data'
 import { ageCover } from '@/data/home-data'
 import { useAgedmCatalog } from '@/hooks/use-agedm'
 import type { AgedmCatalogParams } from '@/api/agedm-client'
+import type { AgeCatalogItem } from '@/types/agedm'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { DegradedNotice } from '@/components/common/degraded-notice'
 
 type CatalogKey =
   | 'platform'
@@ -354,18 +355,13 @@ export function CatalogPage() {
     page: state.page,
     size: 24,
   }
-  const catalogQuery = useAgedmCatalog(catalogParams)
-  const catalog = catalogQuery.data?.data ?? {
-    total: AGE_CATALOG_TOTAL,
-    page: state.page,
-    pageSize: 24,
-    items: AGE_CATALOG_ITEMS,
-  }
+  const { data: catalog, isDegraded } = useAgedmCatalog(catalogParams)
   const totalPages = Math.max(1, Math.ceil(catalog.total / catalog.pageSize))
 
   return (
     <div className="age-page-main">
       <div className="age-container">
+        <DegradedNotice show={isDegraded} />
         <section className="age-page-panel age-catalog-panel">
           <div className="age-catalog-filters">
             <FilterRow label="地区" state={state} keyName="region" options={REGIONS} />

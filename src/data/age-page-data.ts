@@ -1,79 +1,13 @@
 import { ageCover } from './home-data'
-
-export interface AgeCatalogItem {
-  id: number
-  title: string
-  episode: string
-  coverUrl?: string
-  region: string
-  platform: string
-  original: string
-  other: string
-  airDate: string
-  status: string
-  author: string
-  genres: string
-  company: string
-  summary: string
-}
-
-export interface AgeUpdateItem {
-  id: number
-  title: string
-  episode: string
-  coverUrl?: string
-}
-
-export interface AgeUpdateGroup {
-  label: string
-  items: AgeUpdateItem[]
-}
-
-export interface AgeRankItem {
-  id: number
-  title: string
-  views: string
-}
-
-export interface AgeRankBoard {
-  title: string
-  items: AgeRankItem[]
-}
-
-export interface AgeDetailEpisode {
-  number: number
-  title: string
-}
-
-export interface AgeDetailSource {
-  key: string
-  label: string
-  isVip: boolean
-  episodes: AgeDetailEpisode[]
-}
-
-export interface AgeDetailData {
-  id: number
-  title: string
-  coverUrl: string
-  stats: { views: string; comments: string; likes: string }
-  region: string
-  platform: string
-  original: string
-  other: string
-  author: string
-  company: string
-  airDate: string
-  status: string
-  genres: string
-  tags: string[]
-  website?: string
-  summary: string
-  related: Array<{ id: number; title: string }>
-  recommended: AgeUpdateItem[]
-  episodeCount: number
-  sources?: AgeDetailSource[]
-}
+import type {
+  AgeCatalogItem,
+  AgeDetailData,
+  AgeDetailSource,
+  AgeRankBoard,
+  AgeRankItem,
+  AgeUpdateGroup,
+  AgeUpdateItem,
+} from '@/types/agedm'
 
 const catalog = (
   id: number,
@@ -696,10 +630,38 @@ export function getAgeCatalogItem(id: number): AgeCatalogItem {
   return AGE_CATALOG_ITEMS.find((item) => item.id === id) ?? catalog(id, `番剧 ${id}`, '全集')
 }
 
+/** 降级快照的线路数量：与真实上游常见线路数对齐，保持选集面板结构完整。 */
+const FALLBACK_SOURCE_COUNT = 5
+
+/** 降级快照的线路使用中性命名（GLOSSARY「线路」契约）：不冒充只有服务端才知道的真实品牌。 */
+function fallbackSources(count: number): AgeDetailSource[] {
+  const episodes = Array.from({ length: count }, (_, index) => ({
+    number: index + 1,
+    title: '第' + String(index + 1).padStart(2, '0') + '集',
+  }))
+  return Array.from({ length: FALLBACK_SOURCE_COUNT }, (_, index) => ({
+    key: 'fallback-' + (index + 1),
+    label: '线路 ' + (index + 1),
+    isVip: false,
+    episodes,
+  }))
+}
+
+/** 推荐补位（GLOSSARY）：上游优先，本地推荐池去重补足 12 条，detail/play 两页共用。 */
+export const RECOMMENDATION_COUNT = 12
+
+export function getAgeRecommendations(recommended: AgeUpdateItem[]): AgeUpdateItem[] {
+  const extra = AGE_DETAIL_RECOMMENDATIONS.filter(
+    (item) => !recommended.some((rec) => rec.id === item.id),
+  )
+  return [...recommended, ...extra].slice(0, RECOMMENDATION_COUNT)
+}
+
 export function getAgeDetail(id: number): AgeDetailData {
   const item = getAgeCatalogItem(id)
   const isNanoha = id === 20260170
   const related = DETAIL_RELATED.map(([relatedId, title]) => ({ id: relatedId, title }))
+  const episodes = isNanoha ? 9 : episodeCount(item.episode)
   return {
     id: item.id,
     title: item.title,
@@ -721,6 +683,7 @@ export function getAgeDetail(id: number): AgeDetailData {
     summary: isNanoha ? DETAIL_SUMMARY : item.summary,
     related,
     recommended: AGE_DETAIL_RECOMMENDATIONS,
-    episodeCount: isNanoha ? 9 : episodeCount(item.episode),
+    episodeCount: episodes,
+    sources: fallbackSources(episodes),
   }
 }

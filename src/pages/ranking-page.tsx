@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 
-import { AGE_RANK_BOARDS, type AgeRankBoard, type AgeRankItem } from '@/data/age-page-data'
 import { useAgedmRank } from '@/hooks/use-agedm'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { DegradedNotice } from '@/components/common/degraded-notice'
+import type { AgeRankBoard, AgeRankItem } from '@/types/agedm'
 
 const YEARS = Array.from({ length: 27 }, (_, index) => String(2026 - index))
 
@@ -38,20 +39,13 @@ function RankBoard({ board }: { board: AgeRankBoard }) {
 export function RankingPage() {
   usePageTitle('排行榜')
   const [year, setYear] = useState('all')
-  const rankQuery = useAgedmRank(year)
-  const rank = rankQuery.data?.data ?? {
-    year,
-    total: AGE_RANK_BOARDS.reduce((total, board) => total + board.items.length, 0),
-    boards: AGE_RANK_BOARDS,
-    updatedAt: '',
-  }
-  const updatedAt = rank.updatedAt
-    ? rank.updatedAt.replace('T', ' ').slice(0, 19)
-    : rankQuery.data?.meta.fetchedAt.replace('T', ' ').slice(0, 19)
+  const { data: rank, isDegraded } = useAgedmRank(year)
+  const updatedAt = rank.updatedAt ? rank.updatedAt.replace('T', ' ').slice(0, 19) : null
 
   return (
     <div className="age-page-main">
       <div className="age-container">
+        <DegradedNotice show={isDegraded} />
         <section className="age-page-panel age-rank-panel">
           <div className="age-rank-header">
             <h1>

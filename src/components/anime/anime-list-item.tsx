@@ -2,10 +2,10 @@ import { Link } from 'react-router'
 
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import type { AnimeSummary } from '@/types/anime'
+import type { AgeAnimeSummary } from '@/types/agedm'
 
 interface AnimeListItemProps {
-  anime: AnimeSummary
+  anime: AgeAnimeSummary
   className?: string
 }
 

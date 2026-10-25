@@ -1,5 +1,4 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { createBoundedListStore } from '@/stores/bounded-list'
 
 export interface PlayComment {
   id: string
@@ -9,36 +8,22 @@ export interface PlayComment {
   createdAt: number
 }
 
-interface PlayCommentsState {
-  /** createdAt 倒序 */
-  items: PlayComment[]
-  add: (comment: Omit<PlayComment, 'id' | 'createdAt'>) => void
-  remove: (id: string) => void
-}
-
-const MAX_ITEMS = 200
-
 /**
  * AGE 官方评论区依赖其账号体系，无法直接对齐；
  * 这里沿用本项目「本地收藏/观看历史」的本地化思路：评论保存在本机浏览器。
+ * 追加式列表（不去重），上限 200 条，写入时生成 id 与时间戳。
  */
-export const usePlayComments = create<PlayCommentsState>()(
-  persist(
-    (set) => ({
-      items: [],
-      add: (comment) =>
-        set((s) => ({
-          items: [
-            {
-              ...comment,
-              id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : String(Date.now()),
-              createdAt: Date.now(),
-            },
-            ...s.items,
-          ].slice(0, MAX_ITEMS),
-        })),
-      remove: (id) => set((s) => ({ items: s.items.filter((item) => item.id !== id) })),
-    }),
-    { name: 'play-comments' },
-  ),
-)
+export const usePlayComments = createBoundedListStore<
+  Omit<PlayComment, 'id' | 'createdAt'>,
+  PlayComment
+>({
+  name: 'play-comments',
+  cap: 200,
+  keyOf: (comment) => comment.id,
+  dedupe: false,
+  decorate: (comment) => ({
+    ...comment,
+    id: typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : String(Date.now()),
+    createdAt: Date.now(),
+  }),
+})

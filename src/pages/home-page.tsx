@@ -1,20 +1,16 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 
-import {
-  AGE_BANNER_URL,
-  HOME_FRIEND_LINKS,
-  HOME_RECENT,
-  HOME_RECENT_UPDATES,
-  HOME_RECOMMEND,
-  HOME_SCHEDULE,
-  type HomeRecentUpdate,
-  type HomeScheduleDay,
-  type HomeScheduleItem,
-  type HomeVideoCard as HomeVideoCardData,
-} from '@/data/home-data'
+import { AGE_BANNER_URL, HOME_FRIEND_LINKS } from '@/data/home-data'
+import type {
+  HomeRecentUpdate,
+  HomeScheduleDay,
+  HomeScheduleItem,
+  HomeVideoCard,
+} from '@/types/agedm'
 import { useAgedmHome } from '@/hooks/use-agedm'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { DegradedNotice } from '@/components/common/degraded-notice'
 
 function todayIndex(): number {
   return (new Date().getDay() + 6) % 7
@@ -44,7 +40,7 @@ function CoverFallback() {
   )
 }
 
-function VideoCard({ item }: { item: HomeVideoCardData }) {
+function VideoCard({ item }: { item: HomeVideoCard }) {
   const [imageFailed, setImageFailed] = useState(false)
 
   return (
@@ -80,7 +76,7 @@ function VideoSection({
 }: {
   title: string
   moreTo: string
-  items: HomeVideoCardData[]
+  items: HomeVideoCard[]
 }) {
   return (
     <section className="age-video-section">
@@ -200,17 +196,12 @@ function FriendLinksSection() {
 
 export function HomePage() {
   usePageTitle('首页')
-  const homeQuery = useAgedmHome()
-  const home = homeQuery.data?.data ?? {
-    latest: HOME_RECENT,
-    recommend: HOME_RECOMMEND,
-    schedule: HOME_SCHEDULE,
-    recentUpdates: HOME_RECENT_UPDATES,
-  }
+  const { data: home, isDegraded } = useAgedmHome()
 
   return (
     <div className="age-main-wrapper">
       <div className="age-container age-content-container">
+        <DegradedNotice show={isDegraded} />
         <section className="age-home-panel">
           <div className="age-home-grid">
             <div className="age-home-primary">

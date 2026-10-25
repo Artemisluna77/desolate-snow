@@ -1,74 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  ArrowDownUp,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Heart,
-  MessageSquare,
-  Play,
-  ThumbsUp,
-  Trash2,
-} from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { ChevronLeft, ChevronRight, MessageSquare, ThumbsUp, Trash2 } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router'
 
+import { AnimeInfoList } from '@/components/anime/anime-info-list'
+import { AnimeStats } from '@/components/anime/anime-stats'
+import { EpisodePanel } from '@/components/anime/episode-panel'
+import { RecommendCard } from '@/components/anime/recommend-card'
 import { AgedmPlayer } from '@/components/player/agedm-player'
-import {
-  AGE_DETAIL_RECOMMENDATIONS,
-  getAgeDetail,
-  type AgeDetailData,
-  type AgeDetailSource,
-  type AgeUpdateItem,
-} from '@/data/age-page-data'
-import { ageCover } from '@/data/home-data'
+import { DegradedNotice } from '@/components/common/degraded-notice'
+import { getAgeRecommendations } from '@/data/age-page-data'
+import type { AgeDetailData } from '@/types/agedm'
 import { useAgedmDetail, useAgedmPlayback } from '@/hooks/use-agedm'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { usePlayComments } from '@/stores/play-comments'
 import { useWatchHistory } from '@/stores/watch-history'
 
-const SOURCE_LABELS = ['VIP 西瓜', '非凡', '暴风', '无尽', '计算云']
-
-function fallbackSources(anime: AgeDetailData): AgeDetailSource[] {
-  return SOURCE_LABELS.map((label, sourceIndex) => ({
-    key: 'fallback-' + sourceIndex,
-    label: label.replace('VIP ', ''),
-    isVip: sourceIndex === 0,
-    episodes: Array.from({ length: anime.episodeCount }, (_, episodeIndex) => ({
-      number: episodeIndex + 1,
-      title: '第' + String(episodeIndex + 1).padStart(2, '0') + '集',
-    })),
-  }))
-}
-
-function PlayStats({ anime }: { anime: AgeDetailData }) {
-  return (
-    <div className="age-play-stats">
-      <div>
-        <Eye /> 播放数 <strong>{anime.stats.views}</strong>
-      </div>
-      <div>
-        <MessageSquare /> 评论 <strong>{anime.stats.comments}</strong>
-      </div>
-      <div>
-        <Heart /> 点赞 <strong>{anime.stats.likes}</strong>
-      </div>
-    </div>
-  )
-}
-
 function PlayInfoCard({ anime }: { anime: AgeDetailData }) {
-  const entries = [
-    ['地区', anime.region],
-    ['动画种类', anime.platform],
-    ['原版名称', anime.original],
-    ['其他名称', anime.other],
-    ['原作', anime.author],
-    ['播放状态', anime.status],
-    ['首播时间', anime.airDate],
-    ['剧情类型', anime.genres],
-    ['制作公司', anime.company],
-    ...(anime.website ? [['官方网站', anime.website]] : []),
-  ]
   return (
     <div className="age-play-info-card">
       <div className="age-play-info-cover">
@@ -77,22 +24,7 @@ function PlayInfoCard({ anime }: { anime: AgeDetailData }) {
       <div className="age-play-info-body">
         <h1>{anime.title}</h1>
         <p className="age-play-info-summary">{anime.summary}</p>
-        <ul className="age-detail-info-list">
-          {entries.map(([label, value]) => (
-            <li key={label}>
-              <span className="age-detail-info-label">{label}：</span>
-              <span className="age-detail-info-value">
-                {label === '官方网站' ? (
-                  <a href={value} target="_blank" rel="noreferrer">
-                    {value}
-                  </a>
-                ) : (
-                  value
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <AnimeInfoList anime={anime} variant="play" />
       </div>
     </div>
   )
@@ -175,50 +107,6 @@ function PlayComments({ anime }: { anime: AgeDetailData }) {
   )
 }
 
-function RecommendCard({ item }: { item: AgeUpdateItem }) {
-  return (
-    <div className="age-play-recommend-card">
-      <div className="age-detail-recommend-image">
-        <Link to={'/detail/' + item.id} title={item.title}>
-          <img src={item.coverUrl ?? ageCover(item.id)} alt={item.title} loading="lazy" />
-          <span>{item.episode}</span>
-        </Link>
-      </div>
-      <div className="age-detail-recommend-title">
-        <Link to={'/detail/' + item.id} title={item.title}>
-          {item.title}
-        </Link>
-      </div>
-    </div>
-  )
-}
-
-function PlayRecommendations({ anime }: { anime: AgeDetailData }) {
-  // 官方播放页固定展示 12 条(6 列 × 2 行):上游 similar 优先,不足用本地推荐池补位去重。
-  const items = useMemo(() => {
-    const extra = AGE_DETAIL_RECOMMENDATIONS.filter(
-      (item) => !anime.recommended.some((rec) => rec.id === item.id),
-    )
-    return [...anime.recommended, ...extra].slice(0, 12)
-  }, [anime.recommended])
-
-  return (
-    <section className="age-page-panel age-play-panel">
-      <div className="age-detail-section-title">
-        <span>
-          <ThumbsUp /> 相关推荐
-        </span>
-      </div>
-      <hr />
-      <div className="age-play-recommend-grid">
-        {items.map((item) => (
-          <RecommendCard key={item.id} item={item} />
-        ))}
-      </div>
-    </section>
-  )
-}
-
 export function PlayPage() {
   const { id, source, episode } = useParams()
   const navigate = useNavigate()
@@ -226,21 +114,9 @@ export function PlayPage() {
   const valid = animeId !== null && Number.isInteger(animeId) && animeId > 0
   const requestedSource = Math.max(1, Number(source) || 1)
   const episodeNumber = Math.max(1, Number(episode) || 1)
-  const [episodeAscending, setEpisodeAscending] = useState(true)
-  // 选集区当前浏览的线路页签是纯本地状态:切换页签只换列表,不打断正在播放的源(对齐官方 tab 行为)。
-  // from 记录打开页签时的播放线路,URL 线路变化(点了别的集/线路)后浏览状态自动跟随 URL。
-  const [browsedSource, setBrowsedSource] = useState<{ src: number; from: number } | null>(null)
 
-  const detailQuery = useAgedmDetail(valid ? animeId : null)
-  const fallbackAnime = useMemo(
-    () => getAgeDetail(valid && animeId !== null ? animeId : 0),
-    [animeId, valid],
-  )
-  const anime = detailQuery.data?.data ?? fallbackAnime
-  const sourceOptions = useMemo(
-    () => (anime.sources?.length ? anime.sources : fallbackSources(anime)),
-    [anime],
-  )
+  const { data: anime, isDegraded } = useAgedmDetail(valid ? animeId : null)
+  const sourceOptions = anime.sources
   const sourceIndex = Math.min(requestedSource, sourceOptions.length) - 1
   const selectedSource = sourceOptions[sourceIndex] ?? sourceOptions[0]
   const playbackQuery = useAgedmPlayback(
@@ -248,7 +124,7 @@ export function PlayPage() {
     sourceIndex + 1,
     episodeNumber,
   )
-  const record = useWatchHistory((state) => state.record)
+  const add = useWatchHistory((state) => state.add)
   const mainEpisodes = selectedSource?.episodes ?? []
   const current =
     mainEpisodes.find((item) => item.number === episodeNumber) ?? mainEpisodes[episodeNumber - 1]
@@ -259,34 +135,24 @@ export function PlayPage() {
     currentIndex >= 0 && currentIndex < mainEpisodes.length - 1
       ? mainEpisodes[currentIndex + 1]
       : undefined
-  // 浏览的线路:未点过页签时跟随正在播放的线路;URL 线路变化后浏览状态自动失效回退
-  const activeTabIndex =
-    browsedSource && browsedSource.from === sourceIndex
-      ? Math.min(browsedSource.src, sourceOptions.length - 1)
-      : sourceIndex
-  const browsedSource_ = sourceOptions[activeTabIndex] ?? sourceOptions[0]
-  const browsedEpisodes = browsedSource_?.episodes ?? []
-  const displayedBrowsedEpisodes = episodeAscending
-    ? browsedEpisodes
-    : [...browsedEpisodes].reverse()
 
   usePageTitle('播放 ' + anime.title + ' 第' + episodeNumber + '集')
 
   useEffect(() => {
     if (!valid || currentEpisode === undefined) return
-    record({
+    add({
       animeId: anime.id,
       animeTitle: anime.title,
       episode: currentEpisode,
       source: sourceIndex + 1,
     })
-  }, [anime.id, anime.title, currentEpisode, record, sourceIndex, valid])
+  }, [add, anime.id, anime.title, currentEpisode, sourceIndex, valid])
 
   if (!valid) {
     return (
       <div className="age-page-main">
         <div className="age-container">
-          <section className="age-page-panel">无效的播放地址</section>
+          <section className="age-page-panel age-play-panel">无效的播放地址</section>
         </div>
       </div>
     )
@@ -301,9 +167,10 @@ export function PlayPage() {
   return (
     <div className="age-page-main">
       <div className="age-container">
+        <DegradedNotice show={isDegraded} />
         <section className="age-page-panel age-play-panel">
           <div className="age-play-player">
-            <AgedmPlayer playback={playback} poster={anime.coverUrl} />
+            <AgedmPlayer playback={playback} />
             {next ? (
               <button
                 type="button"
@@ -319,70 +186,23 @@ export function PlayPage() {
         </section>
 
         <section className="age-page-panel age-play-panel">
-          <PlayStats anime={anime} />
+          <AnimeStats anime={anime} variant="play" />
           <hr />
           <PlayInfoCard anime={anime} />
         </section>
 
         <section className="age-page-panel age-play-panel">
-          <div className="age-detail-section-title">
-            <span>
-              <Play /> 在线播放
-            </span>
-            <small>视频如果未正常播放或者卡顿，请切换播放源，优先选择 VIP 播放源！</small>
-          </div>
-          <hr />
-          <div className="age-play-source-row">
-            <div className="age-detail-source-tabs" role="tablist" aria-label="播放线路">
-              {sourceOptions.map((item, index) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={index === activeTabIndex}
-                  className={index === activeTabIndex ? 'is-active' : undefined}
-                  onClick={() => setBrowsedSource({ src: index, from: sourceIndex })}
-                >
-                  {item.isVip ? <span>VIP</span> : null} {item.label}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              className="age-play-order-toggle"
-              aria-pressed={!episodeAscending}
-              title="更改排序"
-              onClick={() => setEpisodeAscending((value) => !value)}
-            >
-              <ArrowDownUp /> 更改排序
-            </button>
-          </div>
-          <div className="age-detail-episode-panel" role="tabpanel">
-            <ul>
-              {displayedBrowsedEpisodes.map((item) => {
-                const isPlaying = activeTabIndex === sourceIndex && item.number === episodeNumber
-                return (
-                  <li key={item.number}>
-                    <button
-                      type="button"
-                      aria-current={isPlaying}
-                      onClick={() => switchTo(item.number, activeTabIndex)}
-                    >
-                      {item.title}
-                    </button>
-                    {isPlaying ? (
-                      <div className="age-play-episode-playing" aria-hidden="true">
-                        <div className="loader-play" />
-                      </div>
-                    ) : null}
-                  </li>
-                )
-              })}
-              {mainEpisodes.length === 0 ? (
-                <li className="age-play-episode-empty">暂无分集数据</li>
-              ) : null}
-            </ul>
-          </div>
+          {/* key：播放会话的线路变化时重置面板，页签浏览状态跟随 URL */}
+          <EpisodePanel
+            key={sourceIndex}
+            sources={sourceOptions}
+            playing={{ sourceIndex, episode: episodeNumber }}
+            columns={9}
+            sort
+            onSelectEpisode={(selectedSourceIndex, selectedEpisode) =>
+              switchTo(selectedEpisode, selectedSourceIndex)
+            }
+          />
           <div className="age-play-episode-nav">
             <button type="button" disabled={!prev} onClick={() => prev && switchTo(prev.number)}>
               <ChevronLeft /> 上一集
@@ -399,7 +219,22 @@ export function PlayPage() {
         </section>
 
         <PlayComments anime={anime} />
-        <PlayRecommendations anime={anime} />
+
+        <section className="age-page-panel age-play-panel">
+          <div className="age-detail-section-title">
+            <span>
+              <ThumbsUp /> 相关推荐
+            </span>
+          </div>
+          <hr />
+          <div className="age-play-recommend-grid">
+            {getAgeRecommendations(anime.recommended).map((item) => (
+              <div key={item.id} className="age-play-recommend-card">
+                <RecommendCard item={item} />
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   )
